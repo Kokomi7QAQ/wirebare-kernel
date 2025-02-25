@@ -72,30 +72,7 @@ class SimpleActivity : VpnPrepareActivity() {
     }
     
     override fun onPrepareSuccess() {
-        // 可以在这里调整日志等级
-        WireBare.logLevel = Level.SILENT
-        // 如果需要支持 HTTPS 抓包，则需要配置密钥信息
-        WireBare.jks = JKS(...)
-        WireBare.startProxy {
-            // 传输单元大小
-            mtu = 10 * 1024
-            // TCP 代理服务器数量
-            tcpProxyServerCount = 1
-            // VpnService 的 IPv4 地址
-            ipv4ProxyAddress = "10.1.10.1" to 32
-            // 启用 IPv6 数据包代理
-            enableIpv6 = true
-            // VpnService 的 IPv6 地址
-            ipv6ProxyAddress = "a:a:1:1:a:a:1:1" to 128
-            // 路由，如果启用了 IPv6 数据包代理，则需要同时设置 IPv6 数据包的路由
-            addRoutes("0.0.0.0" to 0, "::" to 0)
-            // 增加要被抓包的应用的包名
-            // addAllowedApplications(...)
-            // 增加异步 HTTP 拦截器
-            // addAsyncHttpInterceptor(...)
-            // 增加阻塞 HTTP 拦截器
-            // addHttpInterceptor(...)
-        }
+        // 启动网络代理抓包
     }
 
 }
@@ -105,7 +82,7 @@ class SimpleActivity : VpnPrepareActivity() {
 
 ### 配置和启动代理服务
 
-准备过后即可随时启动 WireBare 代理服务，上面已经有启动 WireBare 代理服务的简单例子，下面是更加详细的说明
+准备过后即可随时启动 WireBare 代理服务，下面是详细的配置说明
 
 ```kotlin
 fun start() {
