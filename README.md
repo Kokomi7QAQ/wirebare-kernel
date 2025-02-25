@@ -1,10 +1,10 @@
-# wirebare-core
+# wirebare-kernel
 
-wirebare-core 是一个基于 Android VPN Service 开发的 Android 网络代理框架
+wirebare-kernel 是一个基于 Android VPN Service 开发的 Android 网络代理框架
 
-wirebare-core 不提供用户界面，它提供的是网络代理能力
+wirebare-kernel 不提供用户界面，它提供的是网络代理能力
 
-另：基于 wirebare-core 开发出了两款网络代理类型的应用程序
+另：基于 wirebare-kernel 开发出了两款网络代理类型的应用程序
 
 - 网络抓包工具 [wirebare-android](https://github.com/Kokomi7QAQ/wirebare-android)
 - 弱网测试工具 (开发中)
