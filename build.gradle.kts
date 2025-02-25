@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "top.sankokomi.wirebare.core"
+    namespace = "top.sankokomi.wirebare.kernel"
     compileSdk = 34
 
     defaultConfig {

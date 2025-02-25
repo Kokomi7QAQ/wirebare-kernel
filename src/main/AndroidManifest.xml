@@ -11,8 +11,8 @@
     <application
         android:usesCleartextTraffic="true">
         <provider
-            android:name="top.sankokomi.wirebare.core.common.WireBareInitializer"
-            android:authorities="top.sankokomi.wirebare.core.initializer"
+            android:name="top.sankokomi.wirebare.kernel.common.WireBareInitializer"
+            android:authorities="top.sankokomi.wirebare.kernel.initializer"
             android:exported="false" />
     </application>
 
