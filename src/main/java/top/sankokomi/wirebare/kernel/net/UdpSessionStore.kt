@@ -1,6 +1,6 @@
 package top.sankokomi.wirebare.kernel.net
 
-internal class UdpSessionStore : SessionStore<Port, UdpSession>() {
+class UdpSessionStore : SessionStore<Port, UdpSession>() {
 
     /**
      * 添加或覆盖会话

@@ -8,11 +8,11 @@ package top.sankokomi.wirebare.kernel.net
  * @param destinationPort 会话的目的端口号
  * @param sessionStore 会话所对应的 [TcpSessionStore]
  * */
-data class TcpSession internal constructor(
+data class TcpSession(
     val sourcePort: Port,
     val destinationAddress: IpAddress,
     val destinationPort: Port,
-    internal val sessionStore: TcpSessionStore
+    val sessionStore: TcpSessionStore
 ) : Session<Port>(sessionStore) {
 
     override val protocol: Protocol = Protocol.TCP

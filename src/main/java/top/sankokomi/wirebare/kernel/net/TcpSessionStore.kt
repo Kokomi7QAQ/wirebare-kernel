@@ -1,6 +1,6 @@
 package top.sankokomi.wirebare.kernel.net
 
-internal class TcpSessionStore : SessionStore<Port, TcpSession>() {
+class TcpSessionStore : SessionStore<Port, TcpSession>() {
 
     /**
      * 添加或覆盖会话
