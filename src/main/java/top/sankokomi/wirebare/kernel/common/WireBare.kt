@@ -6,6 +6,9 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.MainThread
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import top.sankokomi.wirebare.kernel.service.WireBareProxyService
 import top.sankokomi.wirebare.kernel.util.LogLevel
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
@@ -61,6 +64,13 @@ object WireBare {
             `package` = appContext.packageName
         }
         appContext.startService(intent)
+        MainScope().launch {
+            // TODO 有时候协程无法立刻取消成功，导致服务无法终止，先这样解决
+            delay(1000L)
+            if (proxyStatus == ProxyStatus.DYING) {
+                appContext.startService(intent)
+            }
+        }
     }
 
     /**

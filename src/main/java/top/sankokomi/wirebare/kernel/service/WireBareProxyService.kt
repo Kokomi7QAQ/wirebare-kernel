@@ -8,17 +8,18 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import top.sankokomi.wirebare.kernel.common.ProxyStatus
 import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.service.ProxyLauncher.Companion.launchWith
+import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.closeSafely
 import top.sankokomi.wirebare.kernel.util.defaultNotification
 
 abstract class WireBareProxyService : VpnService(),
-    CoroutineScope by CoroutineScope(Job() + Dispatchers.IO) {
+    CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.IO) {
 
     companion object {
         internal const val WIREBARE_ACTION_PROXY_VPN_START =
@@ -49,6 +50,7 @@ abstract class WireBareProxyService : VpnService(),
         { defaultNotification(channelId) }
 
     final override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        WireBareLogger.info("Service startCommand")
         intent ?: return START_NOT_STICKY
         when (intent.action) {
             WIREBARE_ACTION_PROXY_VPN_START -> startWireBare()
@@ -62,6 +64,7 @@ abstract class WireBareProxyService : VpnService(),
     private var fd: ParcelFileDescriptor? = null
 
     private fun startWireBare() {
+        WireBareLogger.info("Service startWireBare")
         WireBare.notifyVpnStatusChanged(ProxyStatus.ACTIVE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(notificationId, notification(), FOREGROUND_SERVICE_TYPE_DATA_SYNC)
@@ -75,15 +78,17 @@ abstract class WireBareProxyService : VpnService(),
     }
 
     private fun stopWireBare() {
+        WireBareLogger.info("Service stopWireBare")
         launch(Dispatchers.IO) {
-            cancel()
             fd.closeSafely()
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            cancel()
         }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onDestroy() {
+        WireBareLogger.info("Service destroy")
         super.onDestroy()
         WireBare.notifyVpnStatusChanged(ProxyStatus.DEAD)
     }
