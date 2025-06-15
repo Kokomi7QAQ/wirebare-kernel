@@ -110,7 +110,8 @@ class AsyncHttpInterceptChain(
         1,
         Long.MAX_VALUE,
         TimeUnit.DAYS,
-        LinkedBlockingQueue()
+        LinkedBlockingQueue(),
+        ThreadPoolExecutor.DiscardPolicy()
     ).also {
         WireBare.addVpnProxyStatusListener(
             object : IProxyStatusListener {
