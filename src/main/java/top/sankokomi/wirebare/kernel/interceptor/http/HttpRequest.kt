@@ -9,6 +9,12 @@ import java.io.Serializable
  * */
 class HttpRequest internal constructor() : Serializable {
 
+    companion object {
+        private var sequence = 0L
+    }
+
+    val sequence: Long = synchronized(HttpRequest) { HttpRequest.sequence++ }
+
     var requestTime: Long? = null
         internal set
 
