@@ -6,6 +6,7 @@ import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -61,7 +62,7 @@ abstract class WireBareProxyService : VpnService(),
     }
 
     @Volatile
-    private var fd: ParcelFileDescriptor? = null
+    private var fd: CompletableDeferred<ParcelFileDescriptor?> = CompletableDeferred()
 
     private fun startWireBare() {
         WireBareLogger.info("Service startWireBare")
@@ -73,14 +74,18 @@ abstract class WireBareProxyService : VpnService(),
         }
         val configuration = WireBare.configuration.copy()
         launch(Dispatchers.IO) {
-            fd = this@WireBareProxyService launchWith configuration
+            runCatching {
+                fd.complete(this@WireBareProxyService launchWith configuration)
+            }.onFailure {
+                fd.complete(null)
+            }
         }
     }
 
     private fun stopWireBare() {
         WireBareLogger.info("Service stopWireBare")
         launch(Dispatchers.IO) {
-            fd.closeSafely()
+            fd.await().closeSafely()
             cancel()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
