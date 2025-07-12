@@ -3,10 +3,11 @@ package top.sankokomi.wirebare.kernel.ssl
 import java.io.InputStream
 
 class JKS(
-    internal val jksStream: () -> InputStream,
-    internal val alias: String,
-    internal val password: CharArray,
-    internal val type: String = "PKCS12",
-    internal val organization: String = "WB",
-    internal val organizationUnit: String = "WB"
+    val jksStream: () -> InputStream,
+    val alias: String,
+    val password: CharArray,
+    val algorithm: String = "RSA",
+    val type: String = "PKCS12",
+    val organization: String = "WB",
+    val organizationUnit: String = "WB"
 )

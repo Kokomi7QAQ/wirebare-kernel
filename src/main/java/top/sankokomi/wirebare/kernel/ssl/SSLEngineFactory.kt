@@ -4,7 +4,6 @@ import top.sankokomi.wirebare.kernel.net.Port
 import java.security.KeyManagementException
 import java.security.KeyStore
 import java.security.PrivateKey
-import java.util.Arrays
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
@@ -14,22 +13,22 @@ import javax.net.ssl.X509TrustManager
 class SSLEngineFactory(private val jks: JKS) {
 
     companion object {
-        private const val KEY_STORE_TYPE_JKS = "JKS"
-        private const val SSL_PROTOCOL_SSL = "SSL"
-        private const val SSL_PROTOCOL_SSL_V2 = "SSLv2"
-        private const val SSL_PROTOCOL_SSL_V3 = "SSLv3"
-        private const val SSL_PROTOCOL_TLS = "TLS"
+        // private const val KEY_STORE_TYPE_JKS = "JKS"
+        // private const val SSL_PROTOCOL_SSL = "SSL"
+        // private const val SSL_PROTOCOL_SSL_V2 = "SSLv2"
+        // private const val SSL_PROTOCOL_SSL_V3 = "SSLv3"
+        // private const val SSL_PROTOCOL_TLS = "TLS"
         private const val SSL_PROTOCOL_TLS_V1 = "TLSv1"
-        private const val SSL_PROTOCOL_TLS_V1_1 = "TLSv1.1"
+        // private const val SSL_PROTOCOL_TLS_V1_1 = "TLSv1.1"
         private const val SSL_PROTOCOL_TLS_V1_2 = "TLSv1.2"
         private val SSL_PROTOCOLS = arrayOf(
             SSL_PROTOCOL_TLS_V1_2,
-//            SSL_PROTOCOL_TLS_V1_1,
+            // SSL_PROTOCOL_TLS_V1_1,
             SSL_PROTOCOL_TLS_V1,
-//            SSL_PROTOCOL_TLS,
-//            SSL_PROTOCOL_SSL_V3,
-//            SSL_PROTOCOL_SSL_V2,
-//            SSL_PROTOCOL_SSL
+            // SSL_PROTOCOL_TLS,
+            // SSL_PROTOCOL_SSL_V3,
+            // SSL_PROTOCOL_SSL_V2,
+            // SSL_PROTOCOL_SSL
         )
     }
 
@@ -95,7 +94,12 @@ class SSLEngineFactory(private val jks: JKS) {
                 KeyManagerFactory.getDefaultAlgorithm()
             ).also {
                 it.init(
-                    CertificateFactory.generateServer(host, jks, certificate, privateKey),
+                    CertificateFactory.generateProxyServerKeyStore(
+                        host,
+                        jks,
+                        certificate,
+                        privateKey
+                    ),
                     jks.password
                 )
             }
@@ -112,7 +116,7 @@ class SSLEngineFactory(private val jks: JKS) {
             val trustManagers = tmf.trustManagers
             if (trustManagers.size != 1 || trustManagers[0] !is X509TrustManager) {
                 throw KeyManagementException(
-                    "无法识别的默认证书链 " + Arrays.toString(trustManagers)
+                    "无法识别的默认证书链 " + trustManagers.contentToString()
                 )
             }
             context.init(null, tmf.trustManagers, null)

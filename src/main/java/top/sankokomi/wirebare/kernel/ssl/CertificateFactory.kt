@@ -36,13 +36,21 @@ import java.util.Random
 
 object CertificateFactory {
 
-    fun generateServer(
+    /**
+     * 生成代理服务器的 [KeyStore]
+     *
+     * @param commonName 证书的 common name，对于代理服务器来说，这个字段是域名
+     * @param jks 用于填充证书信息的一些基础字段
+     * @param certificate 用于获取证书颁发机构信息的证书
+     * @param privateKey 私钥
+     * */
+    fun generateProxyServerKeyStore(
         commonName: String?,
         jks: JKS,
         certificate: Certificate,
         privateKey: PrivateKey
     ): KeyStore? {
-        val keyPair: KeyPair = generateKeyPair()
+        val keyPair: KeyPair = generateKeyPair(jks.algorithm)
         val issuer: X500Name = X509CertificateHolder(certificate.encoded).subject
         val serial = BigInteger.valueOf(randomSerial())
         val name = X500NameBuilder(BCStyle.INSTANCE)
@@ -85,8 +93,8 @@ object CertificateFactory {
         return result
     }
 
-    private fun generateKeyPair(): KeyPair {
-        val generator = KeyPairGenerator.getInstance("RSA")
+    private fun generateKeyPair(algorithm: String): KeyPair {
+        val generator = KeyPairGenerator.getInstance(algorithm)
         val secureRandom = SecureRandom.getInstance("SHA1PRNG")
         generator.initialize(1024, secureRandom)
         return generator.generateKeyPair()
@@ -129,10 +137,7 @@ object CertificateFactory {
     private fun randomSerial(): Long {
         val rnd = Random()
         rnd.setSeed(System.currentTimeMillis())
-        // prevent browser certificate caches, cause of doubled serial numbers
-        // using 48bit random number
         var sl = rnd.nextInt().toLong() shl 32 or (rnd.nextInt().toLong() and 0xFFFFFFFFL)
-        // let reserve of 16 bit for increasing, serials have to be positive
         sl = sl and 0x0000FFFFFFFFFFFFL
         return sl
     }
