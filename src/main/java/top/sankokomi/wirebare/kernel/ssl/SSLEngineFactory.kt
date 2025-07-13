@@ -126,8 +126,9 @@ class SSLEngineFactory(private val jks: JKS) {
     private fun realCreateSSLContext(): SSLContext? {
         var context: SSLContext? = null
         for (protocol in SSL_PROTOCOLS) {
-            kotlin.runCatching {
+            try {
                 context = SSLContext.getInstance(protocol)
+            } catch (_: Exception) {
             }
             if (context != null) {
                 break

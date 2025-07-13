@@ -1,6 +1,7 @@
 package top.sankokomi.wirebare.kernel.net
 
 import top.sankokomi.wirebare.kernel.util.readByte
+import java.lang.Exception
 
 internal fun resolveTargetNextHeaderOffset(
     packet: ByteArray,
@@ -16,9 +17,11 @@ internal fun resolveTargetNextHeaderOffset(
                 offset + nextHeaderOffset
             )
             nextHeaderOffset += length
-            nextHeader = runCatching {
+            nextHeader = try {
                 packet.readByte(nextHeaderOffset).toInt() and 0xFF
-            }.getOrNull() ?: return 59 to 0
+            } catch (_: Exception) {
+                return 59 to 0
+            }
         } else {
             return nextHeader to nextHeaderOffset
         }

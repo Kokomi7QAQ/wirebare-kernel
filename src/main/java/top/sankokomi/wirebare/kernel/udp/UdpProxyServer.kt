@@ -42,13 +42,13 @@ internal class UdpProxyServer(
     ) {
         launch(Dispatchers.IO) {
             val sourcePort = udpHeader.sourcePort
-            kotlin.runCatching {
+            try {
                 val tunnel =
                     tunnels[sourcePort] ?: createTunnel(ipv4Header, udpHeader, outputStream)
                 tunnel.write(udpHeader.data)
-            }.onFailure {
+            } catch (e: Exception) {
                 tunnels.remove(sourcePort)?.closeSafely()
-                WireBareLogger.error(it)
+                WireBareLogger.error(e)
             }
         }
     }

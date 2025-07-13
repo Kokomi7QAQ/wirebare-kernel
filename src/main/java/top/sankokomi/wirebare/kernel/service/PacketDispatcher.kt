@@ -69,17 +69,17 @@ internal class PacketDispatcher private constructor(
         if (!isActive) return
         // 启动协程接收 TUN 虚拟网卡的输入流
         launch(Dispatchers.IO) {
-            runCatching {
+            try {
                 while (isActive) {
                     var length = 0
                     while (isActive) {
                         length = 0
-                        kotlin.runCatching {
+                        try {
                             // 从 VPN 服务中读取输入流
                             length = inputStream.read(buffer)
-                        }.onFailure {
-                            if (it !is InterruptedIOException) {
-                                WireBareLogger.error(it)
+                        } catch (e: Exception) {
+                            if (e !is InterruptedIOException) {
+                                WireBareLogger.error(e)
                             }
                             return@launch
                         }
@@ -90,7 +90,8 @@ internal class PacketDispatcher private constructor(
 
                     if (length <= 0) continue
 
-                    val mockPacketLossProbability = WireBare.dynamicConfiguration.mockPacketLossProbability
+                    val mockPacketLossProbability =
+                        WireBare.dynamicConfiguration.mockPacketLossProbability
                     if (mockPacketLossProbability == 100) {
                         WireBareLogger.info("模拟丢包 全丢!")
                         continue
@@ -137,7 +138,7 @@ internal class PacketDispatcher private constructor(
                         continue
                     }
 
-                    kotlin.runCatching {
+                    try {
                         // 拦截器拦截输入流
                         when (ipHeader) {
                             is Ipv4Header -> {
@@ -150,12 +151,12 @@ internal class PacketDispatcher private constructor(
                                 }
                             }
                         }
-                    }.onFailure {
-                        WireBareLogger.error(it)
+                    } catch (e: Exception) {
+                        WireBareLogger.error(e)
                     }
                 }
-            }.onFailure {
-                WireBareLogger.error(it)
+            } catch (e: Exception) {
+                WireBareLogger.error(e)
             }
             // 关闭所有资源
             closeSafely(proxyDescriptor, inputStream, outputStream)

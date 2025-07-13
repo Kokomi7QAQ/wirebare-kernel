@@ -12,7 +12,7 @@ object WireBareHelper {
      * 检查指定的证书是否被系统信任
      * */
     fun checkSystemTrustCert(jks: JKS): Boolean {
-        runCatching {
+        try {
             val keyStore: KeyStore = KeyStore.getInstance(jks.type).also {
                 it.load(jks.jksStream(), jks.password)
             }
@@ -28,8 +28,9 @@ object WireBareHelper {
             val tm = trustManagers[0] as X509TrustManager
             tm.checkClientTrusted(arrayOf(certificate), jks.algorithm)
             return true
+        } catch (_: Exception) {
+            return false
         }
-        return false
     }
 
 }

@@ -18,13 +18,14 @@ internal val Int.convertIpv4ToString: String
 
 internal val String.convertIpv4ToInt: Int
     get() = split(".").let { numbers ->
-        kotlin.runCatching {
+        try {
             return@let (numbers[0].toInt() and 0xFF shl 24) or
                     (numbers[1].toInt() and 0xFF shl 16) or
                     (numbers[2].toInt() and 0xFF shl 8) or
                     (numbers[3].toInt() and 0xFF)
+        } catch (_: Exception) {
+            throw IllegalArgumentException("IPv4 地址格式错误 $this")
         }
-        throw IllegalArgumentException("IPv4 地址格式错误 $this")
     }
 
 internal val IntIpv6.convertIpv6ToString: String
@@ -42,7 +43,7 @@ internal val IntIpv6.convertIpv6ToString: String
 
 internal val String.convertIpv6ToInt: IntIpv6
     get() = split(":").let { numbers ->
-        kotlin.runCatching {
+        try {
             return@let IntIpv6(
                 (numbers[0].toLong(16) and 0xFFFF shl 48) or
                         (numbers[1].toLong(16) and 0xFFFF shl 32) or
@@ -53,8 +54,9 @@ internal val String.convertIpv6ToInt: IntIpv6
                         (numbers[6].toLong(16) and 0xFFFF shl 16) or
                         (numbers[7].toLong(16) and 0xFFFF)
             )
+        } catch (_: Exception) {
+            throw IllegalArgumentException("IPv6 地址格式错误 $this")
         }
-        throw IllegalArgumentException("IPv6 地址格式错误 $this")
     }
 
 internal val Short.convertPortToString: String
@@ -65,11 +67,10 @@ internal val Short.convertPortToInt: Int
 
 internal val String.ipVersion: IpVersion?
     get() {
-        runCatching {
+        try {
             this.convertIpv4ToInt
             return IpVersion.IPv4
-        }.onFailure {
+        } catch (_: Exception) {
             return IpVersion.IPv6
         }
-        return null
     }

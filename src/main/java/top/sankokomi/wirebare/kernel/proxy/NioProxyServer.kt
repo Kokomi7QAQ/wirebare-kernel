@@ -35,14 +35,14 @@ internal abstract class NioProxyServer : ProxyServer() {
             selectionKey = selectionKeys.firstOrNull()
             val callback = key.attachment()
             if (!key.isValid || callback !is NioCallback) continue
-            kotlin.runCatching {
+            try {
                 if (key.isAcceptable) callback.onAccept()
                 else if (key.isConnectable) callback.onConnected()
                 else if (key.isReadable) callback.onRead()
                 else if (key.isWritable) callback.onWrite()
-            }.onFailure {
-                WireBareLogger.error("在 NIO KEY 处理时发生错误", it)
-                callback.onException(it)
+            } catch (e: Exception) {
+                WireBareLogger.error("在 NIO KEY 处理时发生错误", e)
+                callback.onException(e)
             }
         }
     }

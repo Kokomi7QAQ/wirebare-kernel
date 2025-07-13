@@ -13,6 +13,7 @@ import top.sankokomi.wirebare.kernel.service.WireBareProxyService
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.closeSafely
 import top.sankokomi.wirebare.kernel.util.ipVersion
+import java.lang.Exception
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
@@ -49,12 +50,12 @@ internal class TcpRealTunnel(
             channel.configureBlocking(false)
             channel.register(selector, SelectionKey.OP_CONNECT, this)
             WireBareLogger.warn("开始连接远程服务器 $remoteAddress:$remotePort")
-            runCatching {
+            try {
                 channel.connect(InetSocketAddress(remoteAddress, remotePort))
-            }.onFailure {
-                reportExceptionWhenConnect(remoteAddress, remotePort, it)
-                WireBareLogger.error(it)
-                onException(it)
+            } catch (e: Exception) {
+                reportExceptionWhenConnect(remoteAddress, remotePort, e)
+                WireBareLogger.error(e)
+                onException(e)
             }
         } else {
             throw IllegalStateException("无法保护 TCP 通道的套接字")

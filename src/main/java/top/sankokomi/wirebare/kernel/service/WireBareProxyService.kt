@@ -74,9 +74,9 @@ abstract class WireBareProxyService : VpnService(),
         }
         val configuration = WireBare.configuration.copy()
         launch(Dispatchers.IO) {
-            runCatching {
+            try {
                 fd.complete(this@WireBareProxyService launchWith configuration)
-            }.onFailure {
+            } catch (_: Exception) {
                 fd.complete(null)
             }
         }

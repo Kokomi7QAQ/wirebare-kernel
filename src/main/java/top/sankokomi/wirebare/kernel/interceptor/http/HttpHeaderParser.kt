@@ -8,7 +8,7 @@ internal fun parseHttpRequestHeader(
     buffer: ByteBuffer,
     session: HttpSession
 ) {
-    runCatching {
+    try {
         val (request, _) = session
         val requestString = buffer.newString()
         val headerString = requestString.substringBefore("\r\n\r\n")
@@ -26,8 +26,8 @@ internal fun parseHttpRequestHeader(
                 "Host: " -> request.host = content
             }
         }
-    }.onFailure {
-        WireBareLogger.error("构造 HTTP 请求 时出现错误")
+    } catch (e: Exception) {
+        WireBareLogger.error("构造 HTTP 请求 时出现错误", e)
     }
 }
 
@@ -35,7 +35,7 @@ internal fun parseHttpResponseHeader(
     buffer: ByteBuffer,
     session: HttpSession
 ) {
-    runCatching {
+    try {
         val (request, response) = session
         response.url = request.url
         val responseString = buffer.newString()
@@ -58,8 +58,8 @@ internal fun parseHttpResponseHeader(
                 "Content-Encoding: " -> response.contentEncoding = content
             }
         }
-    }.onFailure {
-        WireBareLogger.error("构造 HTTP 响应时出现错误")
+    } catch (e: Exception) {
+        WireBareLogger.error("构造 HTTP 响应时出现错误", e)
     }
 }
 
