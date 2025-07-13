@@ -4,12 +4,13 @@
 
 wirebare-kernel 是一个基于 Android VPN Service 开发的 Android 网络代理框架
 
-wirebare-kernel 不提供用户界面，它提供的是网络代理能力
+wirebare-kernel 不提供用户界面
 
-另：基于 wirebare-kernel 开发出了两款网络代理类型的应用程序
 
-- 网络抓包工具 [wirebare-android](https://github.com/Kokomi7QAQ/wirebare-android)
-- 弱网测试工具 (开发中)
+
+如果你只是需要一个可以提供网络抓包能力的应用程序，可以看看：
+
+- 网络抓包应用程序 [wirebare-android](https://github.com/Kokomi7QAQ/wirebare-android)
 
 
 ### 功能概览
