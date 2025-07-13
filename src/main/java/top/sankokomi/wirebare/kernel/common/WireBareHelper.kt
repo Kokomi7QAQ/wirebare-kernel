@@ -1,6 +1,9 @@
 package top.sankokomi.wirebare.kernel.common
 
+import top.sankokomi.wirebare.kernel.net.IpVersion
 import top.sankokomi.wirebare.kernel.ssl.JKS
+import top.sankokomi.wirebare.kernel.util.convertIpv4ToInt
+import top.sankokomi.wirebare.kernel.util.convertIpv6ToInt
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import javax.net.ssl.TrustManagerFactory
@@ -31,6 +34,26 @@ object WireBareHelper {
         } catch (_: Exception) {
             return false
         }
+    }
+
+    /**
+     * Parse ip version from [ipAddress].
+     *
+     * @return the version of ip, or null is illegal.
+     * */
+    fun parseIpVersion(ipAddress: String?): IpVersion? {
+        ipAddress ?: return null
+        try {
+            ipAddress.convertIpv6ToInt
+            return IpVersion.IPv6
+        } catch (_: Exception) {
+        }
+        try {
+            ipAddress.convertIpv4ToInt
+            return IpVersion.IPv4
+        } catch (_: Exception) {
+        }
+        return null
     }
 
 }

@@ -1,8 +1,5 @@
 package top.sankokomi.wirebare.kernel.net
 
-import android.os.Parcel
-import android.os.Parcelable
-import android.os.Parcelable.Creator
 import top.sankokomi.wirebare.kernel.util.convertIpv4ToInt
 import top.sankokomi.wirebare.kernel.util.convertIpv4ToString
 import top.sankokomi.wirebare.kernel.util.convertIpv6ToInt
@@ -11,7 +8,7 @@ import top.sankokomi.wirebare.kernel.util.convertIpv6ToString
 /**
  * ip 地址
  * */
-class IpAddress : Parcelable {
+class IpAddress {
 
     val ipVersion: IpVersion
 
@@ -63,24 +60,6 @@ class IpAddress : Parcelable {
 
     override fun hashCode(): Int {
         return stringIp.hashCode()
-    }
-
-    override fun describeContents(): Int = 0
-
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-        dest.writeInt(intIpv4)
-    }
-
-    private constructor(parcel: Parcel) : this(parcel.readInt())
-
-    companion object CREATOR : Creator<IpAddress> {
-        override fun createFromParcel(parcel: Parcel): IpAddress {
-            return IpAddress(parcel)
-        }
-
-        override fun newArray(size: Int): Array<IpAddress?> {
-            return arrayOfNulls(size)
-        }
     }
 
 }
