@@ -1,37 +1,40 @@
+[语言：简体中文](./README_CN.md)
+
 # wirebare-kernel
 
-wirebare-kernel 是一个基于 Android VPN Service 开发的 Android 网络代理框架
+wirebare-kernel provides network packet capture framework.
 
-wirebare-kernel 不提供用户界面，它提供的是网络代理能力
-
-另：基于 wirebare-kernel 开发出了两款网络代理类型的应用程序
-
-- 网络抓包工具 [wirebare-android](https://github.com/Kokomi7QAQ/wirebare-android)
-- 弱网测试工具 (开发中)
-
-
-### 功能概览
-
-#### 网际层
-
-- 支持 IPv4 和 IPv6 的代理抓包
-- 支持 IP 协议解析
-
-#### 传输层
-
-- 支持 TCP 透明代理、拦截抓包
-- 支持 UDP 透明代理
-
-#### 应用层
-
-- 支持 HTTP 协议解析
-- 支持 HTTPS 加解密（基于 TLSv1.2，需要先为 Android 安装代理服务器根证书）
+wirebare-kernel doesn't provide UI.
 
 
 
-### 注册代理服务
+If you want an Android App to capture network packet, see:
 
-WireBare 代理服务是一个抽象类，你可以继承它然后进行自定义，SimpleWireBareProxyService 是它最简单的实现子类
+- Network packet capture App [wirebare-android](https://github.com/Kokomi7QAQ/wirebare-android)
+
+
+### Features Overview
+
+#### Network Layer
+
+- Support IPv4 and IPv6
+- Support parsing IP packet
+
+#### Transport Layer
+
+- Support transparent proxy and parsing TCP packet
+- Support transparent proxy UDP packet
+
+#### Application Layer
+
+- Support parsing HTTP packet
+- Support parsing HTTPS packet (Based on TLSv1.2, and the certificate must be installed first)
+
+
+
+### Register WireBare Service
+
+WireBareProxyService is an abstract class, you can implement it. SimpleWireBareProxyService is a simple subclass of it.
 
 ```kotlin
 class SimpleWireBareProxyService : WireBareProxyService()
@@ -39,7 +42,7 @@ class SimpleWireBareProxyService : WireBareProxyService()
 
 
 
-在 AndroidManifest.xml 文件的 application 标签中添加如下代码来注册 WireBare 代理服务（以 SimpleWireBareProxyService 为例）
+Add the following code into AndroidManifest.xml to register WireBare Service (e.g. SimpleWireBareProxyService).
 
 ```xml
 <application>
@@ -58,21 +61,21 @@ class SimpleWireBareProxyService : WireBareProxyService()
 
 
 
-### 准备代理服务
+### Prepare WireBare Service
 
-在启动 WireBare 代理服务前需要先进行准备，第一次准备时将会弹出一个用户授权对话框，用户授权后即可启动代理服务
+Before launching WireBare Service, we should request the VPN permission firstly.
 
 ```kotlin
 class SimpleActivity : VpnPrepareActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 若授权成功，则会回调 onPrepareSuccess()
+        // If the permission is granted, the function `onPrepareSuccess()` will be callback.
         prepareProxy()
     }
     
     override fun onPrepareSuccess() {
-        // 启动网络代理抓包
+        // Launch WireBare Service here.
     }
 
 }
@@ -80,63 +83,63 @@ class SimpleActivity : VpnPrepareActivity() {
 
 
 
-### 配置和启动代理服务
+### Config & launch WireBare Service
 
-准备过后即可随时启动 WireBare 代理服务，下面是详细的配置说明
+Following are the configuration details.
 
 ```kotlin
 fun start() {
-    // 注册代理服务状态监听器，可以监听代理服务的启动和销毁以及代理服务器的启动
-    // 需要注销，调用 WireBare.removeVpnProxyStatusListener(...)
+    // Register a listener to monitor the status.
+    // To avoid memory leaks, you need to unregister by calling WireBare.removeVpnProxyStatusListener(...).
     WireBare.addVpnProxyStatusListener(...)
-    // 直接访问以下变量也可以随时获取代理服务的运行状态
+    // You can also get the status by the following code.
     val vpnProxyServiceStatus = WireBare.proxyStatus
     
-    // 配置 WireBare 日志等级
+    // Config log level.
     WireBare.logLevel = Level.SILENT
 
-    // 配置动态配置属性
-    // 以下配置可以动态配置实时生效
-    // 模拟丢包概率，取值范围 [0, 100]
+    // Config dynamic properties.
+    // The following configurations can be dynamically configured to take effect in real time.
+    // The probability of packet loss probability, value range: [0, 100]
     WireBare.dynamicConfiguration.mockPacketLossProbability = 0
-    // 配置并启动代理服务
-    // 以下配置需要修改时需要重启代理服务
+
+    // Launch WireBare Service.
+    // The following configuration must be configured at launching.
     WireBare.startProxy {
-        // 如果需要支持 HTTPS 抓包，则需要配置密钥信息
+        // If you need to capture HTTPS packet, you must configure JKS.
         jks = JKS(...)
         
-        // 代理服务传输单元大小，单位：字节（默认 4096）
+        // Set the maximum transmission unit (MTU) of the VPN interface, UNIT：Byte(4096 by default).
         mtu = 10 * 1024
         
-        // TCP 代理服务器数量
+        // Number of TCP proxy server.
         tcpProxyServerCount = 1
         
-        // VpnService 的 IPv4 地址
+        // The IPv4 address of VpnService.
         ipv4ProxyAddress = "10.1.10.1" to 32
         
-        // 启用 IPv6 数据包代理
+        // Enable IPv6, make sure the network supports IPv6.
         enableIpv6 = true
         
-        // VpnService 的 IPv6 地址
+        // The IPv6 address of VpnService.
         ipv6ProxyAddress = "a:a:1:1:a:a:1:1" to 128
         
-        // 增加代理服务的路由
-        // 如果启用了 IPv6 数据包代理，则需要同时设置 IPv6 数据包的路由
+        // The routes of VpnService. Including IPv4 and IPv6.
         addRoutes("0.0.0.0" to 0, "::" to 0)
         
-        // 增加 DNS 服务器
+        // The DNS servers of VpnService.
         addDnsServers(...)
         
-        // 以下两种设置只能配置其中一种，不能同时配置
-        // 母应用默认被代理，无需手动配置
-        // 增加被代理的应用
+        // You can only configure one of the following two settings.
+        // The parent App is proxied by default, no manual configuration is required.
+        // The App package that you want to proxy.
         addAllowedApplications(...)
-        // 增加不允许代理的应用
+        // The App package that you don't want to proxy.
         addDisallowedApplications(...)
         
-        // 增加异步 HTTP 拦截器
+        // The async HTTP interceptor.
         addAsyncHttpInterceptor(...)
-        // 增加阻塞 HTTP 拦截器
+        // The sync HTTP interceptor.
         addHttpInterceptor(...)
     }
 }
@@ -144,9 +147,9 @@ fun start() {
 
 
 
-### 停止代理服务
+### Stop WireBare Service
 
-抓包完毕后，执行以下函数来停止代理服务
+Stop WireBare Service by the following code.
 
 ```kotlin
 fun stop() {
