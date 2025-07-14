@@ -5,14 +5,12 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
-fun ByteBuffer.unzipBrotli(): ByteBuffer {
-    val compressedData: ByteBuffer = this
-    return ByteBuffer.wrap(compressedData.array().unzipBrotli())
+fun ByteBuffer.uncompressBrotli(): ByteBuffer {
+    return ByteBuffer.wrap(this.array().uncompressBrotli())
 }
 
-fun ByteArray.unzipBrotli(): ByteArray {
-    val compressedData: ByteArray = this
-    val compressedStream = ByteArrayInputStream(compressedData)
+fun ByteArray.uncompressBrotli(): ByteArray {
+    val compressedStream = ByteArrayInputStream(this)
     val brotliStream = BrotliInputStream(compressedStream)
     val outputStream = ByteArrayOutputStream()
     try {

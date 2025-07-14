@@ -5,14 +5,12 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.zip.GZIPInputStream
 
-fun ByteBuffer.unzipGzip(): ByteBuffer {
-    val compressedData: ByteBuffer = this
-    return ByteBuffer.wrap(compressedData.array().unzipGzip())
+fun ByteBuffer.uncompressGzip(): ByteBuffer {
+    return ByteBuffer.wrap(this.array().uncompressGzip())
 }
 
-fun ByteArray.unzipGzip(): ByteArray {
-    val compressedData: ByteArray = this
-    val compressedStream = ByteArrayInputStream(compressedData)
+fun ByteArray.uncompressGzip(): ByteArray {
+    val compressedStream = ByteArrayInputStream(this)
     val gzipStream = GZIPInputStream(compressedStream)
     val outputStream = ByteArrayOutputStream()
     try {
