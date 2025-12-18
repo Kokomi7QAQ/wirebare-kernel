@@ -55,7 +55,7 @@ internal class Ipv4Header(
     internal val version: Int
         get() = packet.readByte(offset + OFFSET_VERSION).toInt() ushr 4
 
-    internal val headerLength: Int
+    override val headerLength: Int
         get() = packet.readByte(offset + OFFSET_IP_HEADER_LENGTH).toInt() and 0xF shl 2
 
     internal var totalLength: Int
@@ -79,11 +79,11 @@ internal class Ipv4Header(
         get() = packet[offset + OFFSET_PROTOCOL]
         set(value) = packet.writeByte(value, offset + OFFSET_PROTOCOL)
 
-    internal var sourceAddress: IpAddress
+    override var sourceAddress: IpAddress
         get() = IpAddress(packet.readInt(offset + OFFSET_SOURCE_ADDRESS))
         set(value) = packet.writeInt(value.intIpv4, offset + OFFSET_SOURCE_ADDRESS)
 
-    internal var destinationAddress: IpAddress
+    override var destinationAddress: IpAddress
         get() = IpAddress(packet.readInt(offset + OFFSET_DESTINATION_ADDRESS))
         set(value) = packet.writeInt(value.intIpv4, offset + OFFSET_DESTINATION_ADDRESS)
 

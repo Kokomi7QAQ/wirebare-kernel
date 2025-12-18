@@ -102,7 +102,7 @@ internal class TcpRealTunnel(
             IpVersion.IPv4 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
-                        "连接远程服务器 $address:$port 时出现错误",
+                        "[TCP] 连接远程服务器 $address:$port 时出现错误",
                         EventSynopsis.IPV4_UNREACHABLE,
                         t
                     )
@@ -112,7 +112,7 @@ internal class TcpRealTunnel(
             IpVersion.IPv6 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
-                        "连接远程服务器 $address:$port 时出现错误",
+                        "[TCP] 连接远程服务器 $address:$port 时出现错误",
                         EventSynopsis.IPV6_UNREACHABLE,
                         t
                     )

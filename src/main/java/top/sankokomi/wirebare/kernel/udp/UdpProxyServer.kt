@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
-import top.sankokomi.wirebare.kernel.net.Ipv4Header
 import top.sankokomi.wirebare.kernel.net.Port
 import top.sankokomi.wirebare.kernel.net.UdpHeader
 import top.sankokomi.wirebare.kernel.net.UdpSessionStore
@@ -36,7 +35,6 @@ internal class UdpProxyServer(
      * 开始代理 UDP 数据包
      * */
     internal fun proxy(
-        ipv4Header: Ipv4Header,
         udpHeader: UdpHeader,
         outputStream: OutputStream
     ) {
@@ -44,7 +42,7 @@ internal class UdpProxyServer(
             val sourcePort = udpHeader.sourcePort
             try {
                 val tunnel =
-                    tunnels[sourcePort] ?: createTunnel(ipv4Header, udpHeader, outputStream)
+                    tunnels[sourcePort] ?: createTunnel(udpHeader, outputStream)
                 tunnel.write(udpHeader.data)
             } catch (e: Exception) {
                 tunnels.remove(sourcePort)?.closeSafely()
@@ -57,10 +55,10 @@ internal class UdpProxyServer(
      * 创建一个 [UdpRealTunnel]
      * */
     private fun createTunnel(
-        ipv4Header: Ipv4Header,
         udpHeader: UdpHeader,
         outputStream: OutputStream
     ): UdpRealTunnel {
+        WireBareLogger.debug("[UDP] 通道创建 客户端 ${udpHeader.sourcePort} >> 代理服务器")
         val session = sessionStore.query(
             udpHeader.sourcePort
         ) ?: throw IllegalStateException("一个 UDP 请求因为找不到指定会话而代理失败")
@@ -75,7 +73,7 @@ internal class UdpProxyServer(
             proxyService
         ).also {
             it.connectRemoteServer(
-                ipv4Header.destinationAddress.stringIp,
+                udpHeader.ipHeader.destinationAddress.stringIp,
                 udpHeader.destinationPort.port.convertPortToInt
             )
             tunnels[session.sourcePort] = it

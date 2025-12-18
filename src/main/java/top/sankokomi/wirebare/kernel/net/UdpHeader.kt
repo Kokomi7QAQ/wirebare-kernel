@@ -19,12 +19,13 @@ import java.nio.ByteBuffer
  *
  * */
 internal class UdpHeader(
-    internal val ipv4Header: Ipv4Header,
+    internal val ipHeader: IIpHeader,
     internal val packet: ByteArray,
     private val offset: Int
 ) {
 
     companion object {
+        internal const val UDP_HEADER_LENGTH = 8
         private const val OFFSET_SOURCE_PORT = 0
         private const val OFFSET_DESTINATION_PORT = 2
         private const val OFFSET_LENGTH = 4
@@ -50,23 +51,42 @@ internal class UdpHeader(
     /**
      * 复制一个与当前 udp 包的头一样的 udp 包，数据部分为空
      * */
-    internal val copyHeader: UdpHeader
-        get() {
-            val array = ByteArray(ipv4Header.headerLength + 8) { packet[it] }.apply {
-                writeShort(8.toShort(), offset + OFFSET_LENGTH)
-            }
-            return UdpHeader(
-                Ipv4Header(array, 0).apply { totalLength = ipv4Header.headerLength + 8 },
-                array,
-                offset
-            )
+    internal fun copy(): UdpHeader {
+        val array = ByteArray(ipHeader.headerLength + UDP_HEADER_LENGTH) {
+            packet[it]
+        }.also {
+            it.writeShort(8.toShort(), offset + OFFSET_LENGTH)
         }
+        when (ipHeader) {
+            is Ipv4Header -> {
+                return UdpHeader(
+                    Ipv4Header(array, 0).also {
+                        it.totalLength = ipHeader.headerLength + UDP_HEADER_LENGTH
+                    },
+                    array,
+                    offset
+                )
+            }
+
+            is Ipv6Header -> {
+                return UdpHeader(
+                    Ipv6Header(array, 0),
+                    array,
+                    offset
+                )
+            }
+
+            else -> {
+                throw NotImplementedError("Unknow ip header ${ipHeader::class.java.name}")
+            }
+        }
+    }
 
     /**
      * 返回 udp 包的数据部分
      * */
     internal val data: ByteBuffer
-        get() = ByteBuffer.wrap(packet, offset + 8, totalLength - 8)
+        get() = ByteBuffer.wrap(packet, offset + UDP_HEADER_LENGTH, totalLength - UDP_HEADER_LENGTH)
 
     /**
      * 先将 udp 头中的校验和置为 0 ，然后重新计算校验和
@@ -77,9 +97,9 @@ internal class UdpHeader(
     }
 
     private fun calculateChecksum(): Short {
-        val dataLength = ipv4Header.totalLength - ipv4Header.headerLength
-        var sum = ipv4Header.ipv4AddressSum
-        sum += BigInteger.valueOf((ipv4Header.protocol.toInt() and 0xF).toLong())
+        val dataLength = ipHeader.dataLength
+        var sum = ipHeader.addressSum
+        sum += BigInteger.valueOf((ipHeader.protocol.toInt() and 0xF).toLong())
         sum += BigInteger.valueOf(dataLength.toLong())
         sum += packet.calculateSum(offset, dataLength)
         var next = sum shr 16

@@ -63,7 +63,7 @@ internal class PacketDispatcher private constructor(
     /**
      * 缓冲流
      * */
-    private var buffer = ByteArray(configuration.mtu)
+    private var buffer = ByteArray(1)
 
     private fun dispatch() {
         if (!isActive) return
@@ -73,8 +73,8 @@ internal class PacketDispatcher private constructor(
                 while (isActive) {
                     var length = 0
                     while (isActive) {
-                        length = 0
                         try {
+                            buffer = ByteArray(configuration.mtu)
                             // 从 VPN 服务中读取输入流
                             length = inputStream.read(buffer)
                         } catch (e: Exception) {

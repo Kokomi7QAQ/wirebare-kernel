@@ -68,7 +68,7 @@ internal class Ipv6Header(
 
     override val protocol: Byte
 
-    internal val headerLength: Int
+    override val headerLength: Int
 
     init {
         val coreInfo = resolveTargetNextHeaderOffset(packet, offset, standardNextHeader)
@@ -76,7 +76,7 @@ internal class Ipv6Header(
         headerLength = coreInfo.second
     }
 
-    internal var sourceAddress: IpAddress
+    override var sourceAddress: IpAddress
         get() = IpAddress(
             IntIpv6(
                 high64 = packet.readLong(offset + OFFSET_SOURCE_ADDRESS_FIRST_64),
@@ -88,7 +88,7 @@ internal class Ipv6Header(
             packet.writeLong(value.intIpv6.low64, offset + OFFSET_SOURCE_ADDRESS_LAST_64)
         }
 
-    internal var destinationAddress: IpAddress
+    override var destinationAddress: IpAddress
         get() = IpAddress(
             IntIpv6(
                 high64 = packet.readLong(offset + OFFSET_DESTINATION_ADDRESS_FIRST_64),

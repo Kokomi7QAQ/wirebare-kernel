@@ -2,6 +2,7 @@ package top.sankokomi.wirebare.kernel.udp
 
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
 import top.sankokomi.wirebare.kernel.net.Ipv4Header
+import top.sankokomi.wirebare.kernel.net.Ipv6Header
 import top.sankokomi.wirebare.kernel.net.Packet
 import top.sankokomi.wirebare.kernel.net.UdpHeader
 import top.sankokomi.wirebare.kernel.net.UdpSessionStore
@@ -43,9 +44,31 @@ internal class UdpPacketInterceptor(
             destinationPort
         )
 
-        WireBareLogger.inetDebug(session, "客户端 $sourcePort >> 代理服务器")
+        WireBareLogger.inetDebug(session, "[IPv4-UDP] 客户端 $sourcePort >> 代理服务器")
 
-        proxyServer.proxy(ipv4Header, udpHeader, outputStream)
+        proxyServer.proxy(udpHeader, outputStream)
     }
 
+    override fun intercept(
+        ipv6Header: Ipv6Header,
+        packet: Packet,
+        outputStream: OutputStream
+    ) {
+        val udpHeader = UdpHeader(ipv6Header, packet.packet, ipv6Header.headerLength)
+
+        val sourcePort = udpHeader.sourcePort
+
+        val destinationAddress = ipv6Header.destinationAddress
+        val destinationPort = udpHeader.destinationPort
+
+        val session = sessionStore.insert(
+            sourcePort,
+            destinationAddress,
+            destinationPort
+        )
+
+        WireBareLogger.inetDebug(session, "[IPv6-UDP] 客户端 $sourcePort >> 代理服务器")
+
+        proxyServer.proxy(udpHeader, outputStream)
+    }
 }
