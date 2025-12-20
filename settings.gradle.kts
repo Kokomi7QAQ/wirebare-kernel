@@ -13,7 +13,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "wirebare-android"
+rootProject.name = "wirebare-kernel"
 include(":app")
 include(":wirebare-kernel")
  
