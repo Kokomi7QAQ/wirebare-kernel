@@ -27,7 +27,7 @@ package top.sankokomi.wirebare.kernel.util
 import android.util.Log
 import androidx.annotation.IntDef
 import top.sankokomi.wirebare.kernel.common.WireBare
-import top.sankokomi.wirebare.kernel.net.IpVersion
+import top.sankokomi.wirebare.kernel.net.IPVersion
 import top.sankokomi.wirebare.kernel.net.TcpSession
 import top.sankokomi.wirebare.kernel.net.UdpSession
 
@@ -128,8 +128,8 @@ internal object WireBareLogger {
 
     private fun tcpPrefix(session: TcpSession): String {
         return when (session.destinationAddress.ipVersion) {
-            IpVersion.IPv4 -> "[IPv4-TCP] ${session.sourcePort}"
-            IpVersion.IPv6 -> "[IPv6-TCP] ${session.sourcePort}"
+            IPVersion.IPv4 -> "[IPv4-TCP] ${session.sourcePort}"
+            IPVersion.IPv6 -> "[IPv6-TCP] ${session.sourcePort}"
         }
     }
 

@@ -82,13 +82,13 @@ class HttpTcpInterceptor(
             val request = HttpRequest().also {
                 it.requestTime = requestTime
                 it.sourcePort = tcpSession.sourcePort.port
-                it.destinationAddress = tcpSession.destinationAddress.stringIp
+                it.destinationAddress = tcpSession.destinationAddress.stringIP
                 it.destinationPort = tcpSession.destinationPort.port
             }
             val response = HttpResponse().also {
                 it.requestTime = requestTime
                 it.sourcePort = tcpSession.sourcePort.port
-                it.destinationAddress = tcpSession.destinationAddress.stringIp
+                it.destinationAddress = tcpSession.destinationAddress.stringIP
                 it.destinationPort = tcpSession.destinationPort.port
             }
             HttpSession(request, response, tcpSession)

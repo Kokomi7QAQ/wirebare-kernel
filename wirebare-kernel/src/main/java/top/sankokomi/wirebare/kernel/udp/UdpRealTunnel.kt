@@ -29,9 +29,8 @@ import top.sankokomi.wirebare.kernel.common.EventSynopsis
 import top.sankokomi.wirebare.kernel.common.ImportantEvent
 import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
-import top.sankokomi.wirebare.kernel.net.IpVersion
-import top.sankokomi.wirebare.kernel.net.Ipv4Header
-import top.sankokomi.wirebare.kernel.net.Ipv6Header
+import top.sankokomi.wirebare.kernel.net.IPHeader
+import top.sankokomi.wirebare.kernel.net.IPVersion
 import top.sankokomi.wirebare.kernel.net.UdpHeader
 import top.sankokomi.wirebare.kernel.net.UdpSession
 import top.sankokomi.wirebare.kernel.nio.DatagramSocketNioTunnel
@@ -39,7 +38,6 @@ import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.closeSafely
 import top.sankokomi.wirebare.kernel.util.ipVersion
 import java.io.OutputStream
-import java.lang.Exception
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
@@ -117,28 +115,11 @@ internal class UdpRealTunnel(
                 buffer[it - header.ipHeader.headerLength - 8]
             }
         }
-
-        val udpHeader: UdpHeader
-        when (header.ipHeader) {
-            is Ipv4Header -> {
-                val ipv4Header = Ipv4Header(packet, 0)
-                udpHeader = UdpHeader(ipv4Header, packet, ipv4Header.headerLength)
-                ipv4Header.totalLength = arrayLength
-                udpHeader.totalLength = arrayLength - ipv4Header.headerLength
-                ipv4Header.notifyCheckSum()
-            }
-
-            is Ipv6Header -> {
-                val ipv6Header = Ipv6Header(packet, 0)
-                udpHeader = UdpHeader(ipv6Header, packet, ipv6Header.headerLength)
-                udpHeader.totalLength = arrayLength - ipv6Header.headerLength
-            }
-
-            else -> {
-                throw NotImplementedError("Unknow ip header ${header.ipHeader::class.java.name}")
-            }
-        }
-
+        val ipHeader = IPHeader.parse(packet, arrayLength, 0)!!
+        val udpHeader = UdpHeader(ipHeader, packet, ipHeader.headerLength)
+        ipHeader.totalLength = arrayLength
+        udpHeader.totalLength = arrayLength - ipHeader.headerLength
+        ipHeader.notifyCheckSum()
         udpHeader.notifyCheckSum()
 
         return packet
@@ -146,7 +127,7 @@ internal class UdpRealTunnel(
 
     private fun reportExceptionWhenConnect(address: String, port: Int, t: Throwable?) {
         when (address.ipVersion) {
-            IpVersion.IPv4 -> {
+            IPVersion.IPv4 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
                         "[UDP] 连接远程服务器 $address:$port 时出现错误",
@@ -156,7 +137,7 @@ internal class UdpRealTunnel(
                 )
             }
 
-            IpVersion.IPv6 -> {
+            IPVersion.IPv6 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
                         "[UDP] 连接远程服务器 $address:$port 时出现错误",

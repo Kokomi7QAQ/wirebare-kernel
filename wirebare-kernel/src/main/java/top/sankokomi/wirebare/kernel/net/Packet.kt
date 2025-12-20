@@ -27,13 +27,13 @@ package top.sankokomi.wirebare.kernel.net
 /**
  * 数据包
  * */
-internal class Packet(
+class Packet(
     /**
      * 数据包的字节流
      * */
-    internal val packet: ByteArray,
+    val packet: ByteArray,
     /**
      * 数据包的长度
      * */
-    internal val length: Int
+    val length: Int
 )

@@ -24,7 +24,7 @@
 
 package top.sankokomi.wirebare.kernel.net
 
-enum class IpVersion {
-    IPv4,
-    IPv6
-}
+data class IntIPv6(
+    val high64: Long,
+    val low64: Long
+)

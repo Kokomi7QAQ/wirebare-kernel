@@ -97,7 +97,7 @@ internal class UdpProxyServer(
             proxyService
         ).also {
             it.connectRemoteServer(
-                udpHeader.ipHeader.destinationAddress.stringIp,
+                udpHeader.ipHeader.destinationAddress.stringIP,
                 udpHeader.destinationPort.port.convertPortToInt
             )
             tunnels[session.sourcePort] = it

@@ -59,7 +59,7 @@ import kotlin.experimental.and
  * RES := Reserved
  */
 internal class TcpHeader(
-    private val ipHeader: IIpHeader,
+    private val ipHeader: IPHeader,
     private val packet: ByteArray,
     private val offset: Int
 ) {
@@ -102,8 +102,6 @@ internal class TcpHeader(
 
     /**
      * 计算 tcp 包的数据部分的长度
-     *
-     * 计算结果 = [Ipv4Header.totalLength] - [Ipv4Header.headerLength] - [headerLength]
      * */
     internal val dataLength: Int
         get() = ipHeader.dataLength - headerLength
@@ -147,7 +145,7 @@ internal class TcpHeader(
     private fun calculateChecksum(): Short {
         val totalLength = ipHeader.dataLength
         var sum = ipHeader.addressSum
-        sum += BigInteger.valueOf((ipHeader.protocol.toInt() and 0xF).toLong())
+        sum += BigInteger.valueOf((ipHeader.dataProtocol.toInt() and 0xF).toLong())
         sum += BigInteger.valueOf(totalLength.toLong())
         sum += packet.calculateSum(offset, totalLength)
         var next = sum shr 16

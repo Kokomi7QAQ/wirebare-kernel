@@ -55,13 +55,13 @@ import kotlin.experimental.and
  *
  * IHL := IP Header Length
  */
-internal class Ipv4Header(
+class IPv4Header(
     private val packet: ByteArray,
     private val offset: Int = 0
-): IIpHeader {
+) : IPHeader {
 
     companion object {
-        internal const val MIN_IPV4_LENGTH = 20
+        const val MIN_IPV4_LENGTH = 20
         private const val OFFSET_VERSION = 0
         private const val OFFSET_IP_HEADER_LENGTH = 0
         private const val OFFSET_TOTAL_LENGTH = 2
@@ -76,60 +76,60 @@ internal class Ipv4Header(
         private const val MASK_DF = 0b01000000.toByte()
     }
 
-    internal val version: Int
-        get() = packet.readByte(offset + OFFSET_VERSION).toInt() ushr 4
+    override val ipVersion: IPVersion = IPVersion.IPv4
+
+    override var dataProtocol: Byte
+        get() = packet[offset + OFFSET_PROTOCOL]
+        set(value) = packet.writeByte(value, offset + OFFSET_PROTOCOL)
 
     override val headerLength: Int
         get() = packet.readByte(offset + OFFSET_IP_HEADER_LENGTH).toInt() and 0xF shl 2
 
-    internal var totalLength: Int
-        get() = packet.readShort(offset + OFFSET_TOTAL_LENGTH).toInt() and 0xFFFF
-        set(value) = packet.writeShort(value.toShort(), offset + OFFSET_TOTAL_LENGTH)
-
     override val dataLength: Int
         get() = totalLength - headerLength
 
-    internal val identification: Short get() = packet.readShort(OFFSET_IDENTIFICATION)
-
-    internal val flags: Byte get() = packet.readByte(OFFSET_FLAGS)
-
-    internal val mf: Boolean get() = flags and MASK_MF == MASK_MF
-
-    internal val df: Boolean get() = flags and MASK_DF == MASK_DF
-
-    internal val fragmentOffset: Short get() = packet.readShort(OFFSET_FRAGMENT_OFFSET) and 0x1FFF
-
-    override var protocol: Byte
-        get() = packet[offset + OFFSET_PROTOCOL]
-        set(value) = packet.writeByte(value, offset + OFFSET_PROTOCOL)
+    override var totalLength: Int
+        get() = packet.readShort(offset + OFFSET_TOTAL_LENGTH).toInt() and 0xFFFF
+        set(value) = packet.writeShort(value.toShort(), offset + OFFSET_TOTAL_LENGTH)
 
     override var sourceAddress: IpAddress
         get() = IpAddress(packet.readInt(offset + OFFSET_SOURCE_ADDRESS))
-        set(value) = packet.writeInt(value.intIpv4, offset + OFFSET_SOURCE_ADDRESS)
+        set(value) = packet.writeInt(value.intIPv4, offset + OFFSET_SOURCE_ADDRESS)
 
     override var destinationAddress: IpAddress
         get() = IpAddress(packet.readInt(offset + OFFSET_DESTINATION_ADDRESS))
-        set(value) = packet.writeInt(value.intIpv4, offset + OFFSET_DESTINATION_ADDRESS)
-
-    internal var checkSum: Short
-        get() = packet.readShort(offset + OFFSET_CHECK_SUM)
-        private set(value) = packet.writeShort(value, offset + OFFSET_CHECK_SUM)
+        set(value) = packet.writeInt(value.intIPv4, offset + OFFSET_DESTINATION_ADDRESS)
 
     /**
      * 计算来源 ip 地址和目的 ip 地址的异或和并返回
      * */
-    internal val ipv4AddressSum: BigInteger
+    override val addressSum: BigInteger
         get() = packet.calculateSum(offset + OFFSET_SOURCE_ADDRESS, 8)
-
-    override val addressSum: BigInteger get() = ipv4AddressSum
 
     /**
      * 先将 ip 头中的校验和置为 0 ，然后重新计算校验和
      * */
-    internal fun notifyCheckSum() {
+    override fun notifyCheckSum() {
         checkSum = 0.toShort()
         checkSum = calculateChecksum()
     }
+
+    val version: Int
+        get() = packet.readByte(offset + OFFSET_VERSION).toInt() ushr 4
+
+    val identification: Short get() = packet.readShort(OFFSET_IDENTIFICATION)
+
+    val flags: Byte get() = packet.readByte(OFFSET_FLAGS)
+
+    val mf: Boolean get() = flags and MASK_MF == MASK_MF
+
+    val df: Boolean get() = flags and MASK_DF == MASK_DF
+
+    val fragmentOffset: Short get() = packet.readShort(OFFSET_FRAGMENT_OFFSET) and 0x1FFF
+
+    var checkSum: Short
+        get() = packet.readShort(offset + OFFSET_CHECK_SUM)
+        private set(value) = packet.writeShort(value, offset + OFFSET_CHECK_SUM)
 
     private fun calculateChecksum(): Short {
         var sum = packet.calculateSum(offset, headerLength)

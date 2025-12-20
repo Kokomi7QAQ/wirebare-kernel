@@ -29,27 +29,36 @@ package top.sankokomi.wirebare.kernel.net
  *
  * @param name 协议名称
  * */
-class Protocol private constructor(internal val name: String) {
+class Protocol private constructor(
+    val name: String,
+    val code: Byte
+) {
 
     internal companion object {
         /**
          * 代表 TCP 协议
          * */
-        val TCP = Protocol("TCP")
+        val TCP = Protocol("TCP", 6.toByte())
 
         /**
          * 代表 UDP 协议
          * */
-        val UDP = Protocol("UDP")
+        val UDP = Protocol("UDP", 17.toByte())
+
+        /**
+         * 代表 IPv6 头中无下一报头
+         * */
+        val END = Protocol("END", 59.toByte())
 
         /**
          * 代表未知协议
          * */
-        val NULL = Protocol("NULL")
+        val NULL = Protocol("NULL", 0.toByte())
 
         private val protocols = hashMapOf(
-            6.toByte() to TCP,
-            17.toByte() to UDP
+            TCP.code to TCP,
+            UDP.code to UDP,
+            END.code to END
         )
 
         /**
@@ -59,6 +68,7 @@ class Protocol private constructor(internal val name: String) {
          *
          * @see [TCP]
          * @see [UDP]
+         * @see [END]
          * @see [NULL]
          * */
         internal fun parse(code: Byte): Protocol {

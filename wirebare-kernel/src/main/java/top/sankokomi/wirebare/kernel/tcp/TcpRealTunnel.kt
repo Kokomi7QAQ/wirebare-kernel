@@ -30,7 +30,7 @@ import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
 import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpTunnel
 import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpVirtualGateway
-import top.sankokomi.wirebare.kernel.net.IpVersion
+import top.sankokomi.wirebare.kernel.net.IPVersion
 import top.sankokomi.wirebare.kernel.net.TcpSession
 import top.sankokomi.wirebare.kernel.nio.SocketNioTunnel
 import top.sankokomi.wirebare.kernel.service.WireBareProxyService
@@ -66,7 +66,7 @@ internal class TcpRealTunnel(
         proxyTunnel = proxy
     }
 
-    private val remoteAddress = session.destinationAddress.stringIp
+    private val remoteAddress = session.destinationAddress.stringIP
     private val remotePort = session.destinationPort.port.toInt() and 0xFFFF
 
     internal fun connectRemoteServer() {
@@ -123,7 +123,7 @@ internal class TcpRealTunnel(
 
     private fun reportExceptionWhenConnect(address: String, port: Int, t: Throwable?) {
         when (address.ipVersion) {
-            IpVersion.IPv4 -> {
+            IPVersion.IPv4 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
                         "[TCP] 连接远程服务器 $address:$port 时出现错误",
@@ -133,7 +133,7 @@ internal class TcpRealTunnel(
                 )
             }
 
-            IpVersion.IPv6 -> {
+            IPVersion.IPv6 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
                         "[TCP] 连接远程服务器 $address:$port 时出现错误",

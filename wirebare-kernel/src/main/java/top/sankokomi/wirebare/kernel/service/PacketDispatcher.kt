@@ -30,12 +30,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
-import top.sankokomi.wirebare.kernel.net.IIpHeader
-import top.sankokomi.wirebare.kernel.net.IpHeader
-import top.sankokomi.wirebare.kernel.net.Ipv4Header
-import top.sankokomi.wirebare.kernel.net.Ipv6Header
+import top.sankokomi.wirebare.kernel.net.IPHeader
 import top.sankokomi.wirebare.kernel.net.Packet
 import top.sankokomi.wirebare.kernel.net.Protocol
 import top.sankokomi.wirebare.kernel.tcp.TcpPacketInterceptor
@@ -45,7 +41,6 @@ import top.sankokomi.wirebare.kernel.util.closeSafely
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InterruptedIOException
-import kotlin.random.Random
 
 /**
  * ip 包调度者，负责从代理服务的输入流中获取 ip 包并根据 ip 头的信息分配给对应的 [PacketInterceptor]
@@ -114,67 +109,19 @@ internal class PacketDispatcher private constructor(
 
                     if (length <= 0) continue
 
-                    val mockPacketLossProbability =
-                        WireBare.dynamicConfiguration.mockPacketLossProbability
-                    if (mockPacketLossProbability == 100) {
-                        WireBareLogger.info("模拟丢包 全丢!")
-                        continue
-                    } else if (
-                        mockPacketLossProbability in 1..100
-                    ) {
-                        when ((Random.nextInt() % 100) + 1) {
-                            in 1..mockPacketLossProbability -> {
-                                WireBareLogger.info("模拟丢包 丢!")
-                                continue
-                            }
-                        }
-                    }
-
                     val packet = Packet(buffer, length)
 
-                    val ipHeader: IIpHeader
-                    when (val ipVersion = IpHeader.readIpVersion(packet, 0)) {
-                        IpHeader.VERSION_4 -> {
-                            if (packet.length < Ipv4Header.MIN_IPV4_LENGTH) {
-                                WireBareLogger.warn("报文长度小于 ${Ipv4Header.MIN_IPV4_LENGTH}")
-                                continue
-                            }
-                            ipHeader = Ipv4Header(packet.packet, 0)
-                        }
+                    val ipHeader: IPHeader = IPHeader.parse(packet.packet, packet.length, 0) ?: continue
 
-                        IpHeader.VERSION_6 -> {
-                            if (packet.length < Ipv6Header.IPV6_STANDARD_LENGTH) {
-                                WireBareLogger.warn("报文长度小于 ${Ipv6Header.IPV6_STANDARD_LENGTH}")
-                                continue
-                            }
-                            ipHeader = Ipv6Header(packet.packet, 0)
-                        }
-
-                        else -> {
-                            WireBareLogger.debug("未知的 ip 版本号 0b${ipVersion.toString(2)}")
-                            continue
-                        }
-                    }
-
-                    val interceptor = interceptors[Protocol.parse(ipHeader.protocol)]
+                    val interceptor = interceptors[Protocol.parse(ipHeader.dataProtocol)]
                     if (interceptor == null) {
-                        WireBareLogger.warn("未知的协议代号 0b${ipHeader.protocol.toString(2)}")
+                        WireBareLogger.warn("未知的协议代号 0b${ipHeader.dataProtocol.toString(2)}")
                         continue
                     }
 
                     try {
                         // 拦截器拦截输入流
-                        when (ipHeader) {
-                            is Ipv4Header -> {
-                                interceptor.intercept(ipHeader, packet, outputStream)
-                            }
-
-                            is Ipv6Header -> {
-                                if (configuration.enableIpv6) {
-                                    interceptor.intercept(ipHeader, packet, outputStream)
-                                }
-                            }
-                        }
+                        interceptor.intercept(ipHeader, packet, outputStream)
                     } catch (e: Exception) {
                         WireBareLogger.error(e)
                     }

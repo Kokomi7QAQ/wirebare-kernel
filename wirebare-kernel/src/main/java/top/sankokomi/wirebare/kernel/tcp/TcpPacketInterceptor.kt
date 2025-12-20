@@ -26,10 +26,9 @@ package top.sankokomi.wirebare.kernel.tcp
 
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
 import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpVirtualGateway
+import top.sankokomi.wirebare.kernel.net.IPHeader
+import top.sankokomi.wirebare.kernel.net.IPVersion
 import top.sankokomi.wirebare.kernel.net.IpAddress
-import top.sankokomi.wirebare.kernel.net.IpVersion
-import top.sankokomi.wirebare.kernel.net.Ipv4Header
-import top.sankokomi.wirebare.kernel.net.Ipv6Header
 import top.sankokomi.wirebare.kernel.net.Packet
 import top.sankokomi.wirebare.kernel.net.Port
 import top.sankokomi.wirebare.kernel.net.TcpHeader
@@ -43,8 +42,8 @@ import java.io.OutputStream
 /**
  * TCP 报文拦截器
  *
- * 拦截 IP 包并修改 [Ipv4Header.sourceAddress] 、
- * [TcpHeader.sourcePort] 、 [Ipv4Header.destinationAddress] 、
+ * 拦截 IP 包并修改 [IPHeader.sourceAddress] 、
+ * [TcpHeader.sourcePort] 、 [IPHeader.destinationAddress] 、
  * [TcpHeader.destinationPort]
  *
  * 目的是将被代理客户端的请求数据包代理到 [TcpProxyServer] ，
@@ -60,14 +59,14 @@ internal class TcpPacketInterceptor(
     /**
      * 虚拟网卡的 ip 地址，也就是代理服务器的 ip 地址
      * */
-    private val tunIpv4Address = IpAddress(
+    private val tunIPv4Address = IpAddress(
         configuration.ipv4Address,
-        IpVersion.IPv4
+        IPVersion.IPv4
     )
 
-    private val tunIpv6Address = IpAddress(
+    private val tunIPv6Address = IpAddress(
         configuration.ipv6Address,
-        IpVersion.IPv6
+        IPVersion.IPv6
     )
 
     /**
@@ -93,16 +92,23 @@ internal class TcpPacketInterceptor(
     }
 
     override fun intercept(
-        ipv4Header: Ipv4Header, packet: Packet, outputStream: OutputStream
+        ipHeader: IPHeader,
+        packet: Packet,
+        outputStream: OutputStream
     ) {
-        val tcpHeader = TcpHeader(ipv4Header, packet.packet, ipv4Header.headerLength)
+        if (!configuration.enableIpv6 && ipHeader.ipVersion == IPVersion.IPv6) {
+            WireBareLogger.error("未启用 IPv6 代理")
+            return
+        }
+
+        val tcpHeader = TcpHeader(ipHeader, packet.packet, ipHeader.headerLength)
 
         // 来源地址和端口
-        val sourceAddress = ipv4Header.sourceAddress
+        val sourceAddress = ipHeader.sourceAddress
         val sourcePort = tcpHeader.sourcePort
 
         // 目的地址和端口
-        val destinationAddress = ipv4Header.destinationAddress
+        val destinationAddress = ipHeader.destinationAddress
         val destinationPort = tcpHeader.destinationPort
 
         if (!ports.contains(sourcePort)) {
@@ -117,13 +123,16 @@ internal class TcpPacketInterceptor(
             ].proxyServerPort
 
             // 将被代理客户端的请求数据包转发给代理服务器
-            ipv4Header.sourceAddress = destinationAddress
+            ipHeader.sourceAddress = destinationAddress
 
-            ipv4Header.destinationAddress = tunIpv4Address
+            when (ipHeader.ipVersion) {
+                IPVersion.IPv4 -> ipHeader.destinationAddress = tunIPv4Address
+                IPVersion.IPv6 -> ipHeader.destinationAddress = tunIPv6Address
+            }
             tcpHeader.destinationPort = proxyServerPort
 
             WireBareLogger.info(
-                "[IPv4-TCP] 客户端 $sourcePort >> 代理服务器 $proxyServerPort " +
+                "[${ipHeader.ipVersion.name}-TCP] 客户端 $sourcePort >> 代理服务器 $proxyServerPort " +
                         "seq = ${tcpHeader.sequenceNumber.toUInt()} ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
                         "flag = ${
                             tcpHeader.flag.toUByte().toString(2).padStart(6, '0')
@@ -141,13 +150,16 @@ internal class TcpPacketInterceptor(
 //            }
 
             // 将远程服务器的响应包转发给被代理客户端
-            ipv4Header.sourceAddress = destinationAddress
+            ipHeader.sourceAddress = destinationAddress
             tcpHeader.sourcePort = session.destinationPort
 
-            ipv4Header.destinationAddress = tunIpv4Address
+            when (ipHeader.ipVersion) {
+                IPVersion.IPv4 -> ipHeader.destinationAddress = tunIPv4Address
+                IPVersion.IPv6 -> ipHeader.destinationAddress = tunIPv6Address
+            }
 
             WireBareLogger.info(
-                "[IPv4-TCP] 客户端 $destinationPort << 代理服务器 $sourcePort " +
+                "[${ipHeader.ipVersion.name}-TCP] 客户端 $destinationPort << 代理服务器 $sourcePort " +
                         "seq = ${tcpHeader.sequenceNumber.toUInt()} ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
                         "flag = ${
                             tcpHeader.flag.toUByte().toString(2).padStart(6, '0')
@@ -155,76 +167,7 @@ internal class TcpPacketInterceptor(
             )
         }
 
-        ipv4Header.notifyCheckSum()
-        tcpHeader.notifyCheckSum()
-
-        outputStream.write(packet.packet, 0, packet.length)
-    }
-
-    override fun intercept(
-        ipv6Header: Ipv6Header, packet: Packet, outputStream: OutputStream
-    ) {
-        val tcpHeader = TcpHeader(ipv6Header, packet.packet, ipv6Header.headerLength)
-
-        // 来源地址和端口
-        val sourceAddress = ipv6Header.sourceAddress
-        val sourcePort = tcpHeader.sourcePort
-
-        // 目的地址和端口
-        val destinationAddress = ipv6Header.destinationAddress
-        val destinationPort = tcpHeader.destinationPort
-
-        if (!ports.contains(sourcePort)) {
-            // 来源不是代理服务器，说明该数据包是被代理客户端发出来的请求包
-            sessionStore.insert(
-                sourcePort, destinationAddress, destinationPort
-            )
-
-            // 根据端口号分配给固定的服务器
-            val proxyServerPort = servers[
-                sourcePort.port.convertPortToInt % servers.size
-            ].proxyServerPort
-
-            // 将被代理客户端的请求数据包转发给代理服务器
-            ipv6Header.sourceAddress = destinationAddress
-
-            ipv6Header.destinationAddress = tunIpv6Address
-            tcpHeader.destinationPort = proxyServerPort
-
-            WireBareLogger.info(
-                "[IPv6-TCP] 客户端 $sourcePort >> 代理服务器 $proxyServerPort " +
-                        "seq = ${tcpHeader.sequenceNumber.toUInt()} ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
-                        "flag = ${
-                            tcpHeader.flag.toUByte().toString(2).padStart(6, '0')
-                        } length = ${tcpHeader.dataLength}"
-            )
-        } else {
-            // 来源是代理服务器，说明该数据包是响应包
-            val session = sessionStore.query(destinationPort)
-                ?: throw IllegalStateException(
-                    "发现一个未建立会话但有响应的连接 端口 $destinationPort"
-                )
-
-//            if (tcpHeader.fin) {
-//                session.tryDrop()
-//            }
-
-            // 将远程服务器的响应包转发给被代理客户端
-            ipv6Header.sourceAddress = destinationAddress
-            tcpHeader.sourcePort = session.destinationPort
-
-            ipv6Header.destinationAddress = tunIpv6Address
-
-            WireBareLogger.info(
-                "[IPv6-TCP] 客户端 $destinationPort << 代理服务器 $sourcePort " +
-                        "seq = ${tcpHeader.sequenceNumber.toUInt()} ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
-                        "flag = ${
-                            tcpHeader.flag.toUByte().toString(2).padStart(6, '0')
-                        } length = ${tcpHeader.dataLength}"
-            )
-        }
-
-        // ipv4Header.notifyCheckSum()
+        ipHeader.notifyCheckSum()
         tcpHeader.notifyCheckSum()
 
         outputStream.write(packet.packet, 0, packet.length)

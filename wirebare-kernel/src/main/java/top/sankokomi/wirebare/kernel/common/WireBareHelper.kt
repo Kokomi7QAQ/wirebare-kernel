@@ -24,10 +24,10 @@
 
 package top.sankokomi.wirebare.kernel.common
 
-import top.sankokomi.wirebare.kernel.net.IpVersion
+import top.sankokomi.wirebare.kernel.net.IPVersion
 import top.sankokomi.wirebare.kernel.ssl.JKS
-import top.sankokomi.wirebare.kernel.util.convertIpv4ToInt
-import top.sankokomi.wirebare.kernel.util.convertIpv6ToInt
+import top.sankokomi.wirebare.kernel.util.convertIPv4ToInt
+import top.sankokomi.wirebare.kernel.util.convertIPv6ToInt
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import javax.net.ssl.TrustManagerFactory
@@ -65,16 +65,16 @@ object WireBareHelper {
      *
      * @return the version of ip, or null is illegal.
      * */
-    fun parseIpVersion(ipAddress: String?): IpVersion? {
+    fun parseIpVersion(ipAddress: String?): IPVersion? {
         ipAddress ?: return null
         try {
-            ipAddress.convertIpv6ToInt
-            return IpVersion.IPv6
+            ipAddress.convertIPv6ToInt
+            return IPVersion.IPv6
         } catch (_: Exception) {
         }
         try {
-            ipAddress.convertIpv4ToInt
-            return IpVersion.IPv4
+            ipAddress.convertIPv4ToInt
+            return IPVersion.IPv4
         } catch (_: Exception) {
         }
         return null

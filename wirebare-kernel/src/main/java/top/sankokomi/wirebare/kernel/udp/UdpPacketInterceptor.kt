@@ -25,8 +25,7 @@
 package top.sankokomi.wirebare.kernel.udp
 
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
-import top.sankokomi.wirebare.kernel.net.Ipv4Header
-import top.sankokomi.wirebare.kernel.net.Ipv6Header
+import top.sankokomi.wirebare.kernel.net.IPHeader
 import top.sankokomi.wirebare.kernel.net.Packet
 import top.sankokomi.wirebare.kernel.net.UdpHeader
 import top.sankokomi.wirebare.kernel.net.UdpSessionStore
@@ -51,15 +50,15 @@ internal class UdpPacketInterceptor(
         UdpProxyServer(sessionStore, configuration, proxyService).apply { dispatch() }
 
     override fun intercept(
-        ipv4Header: Ipv4Header,
+        ipHeader: IPHeader,
         packet: Packet,
         outputStream: OutputStream
     ) {
-        val udpHeader = UdpHeader(ipv4Header, packet.packet, ipv4Header.headerLength)
+        val udpHeader = UdpHeader(ipHeader, packet.packet, ipHeader.headerLength)
 
         val sourcePort = udpHeader.sourcePort
 
-        val destinationAddress = ipv4Header.destinationAddress
+        val destinationAddress = ipHeader.destinationAddress
         val destinationPort = udpHeader.destinationPort
 
         val session = sessionStore.insert(
@@ -68,30 +67,10 @@ internal class UdpPacketInterceptor(
             destinationPort
         )
 
-        WireBareLogger.inetDebug(session, "[IPv4-UDP] 客户端 $sourcePort >> 代理服务器")
-
-        proxyServer.proxy(udpHeader, outputStream)
-    }
-
-    override fun intercept(
-        ipv6Header: Ipv6Header,
-        packet: Packet,
-        outputStream: OutputStream
-    ) {
-        val udpHeader = UdpHeader(ipv6Header, packet.packet, ipv6Header.headerLength)
-
-        val sourcePort = udpHeader.sourcePort
-
-        val destinationAddress = ipv6Header.destinationAddress
-        val destinationPort = udpHeader.destinationPort
-
-        val session = sessionStore.insert(
-            sourcePort,
-            destinationAddress,
-            destinationPort
+        WireBareLogger.inetDebug(
+            session,
+            "[${ipHeader.ipVersion.name}-UDP] 客户端 $sourcePort >> 代理服务器"
         )
-
-        WireBareLogger.inetDebug(session, "[IPv6-UDP] 客户端 $sourcePort >> 代理服务器")
 
         proxyServer.proxy(udpHeader, outputStream)
     }

@@ -46,7 +46,7 @@ object WireBare {
 
     private var _configuration: WireBareConfiguration? = null
 
-    var dynamicConfiguration: WireBareDynamicConfiguration = WireBareDynamicConfiguration()
+    var dynamicConfig: DynamicConfiguration = DynamicConfiguration()
 
     private val listeners: MutableSet<IProxyStatusListener> = hashSetOf()
 

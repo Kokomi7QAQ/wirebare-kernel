@@ -24,14 +24,14 @@
 
 package top.sankokomi.wirebare.kernel.util
 
-import top.sankokomi.wirebare.kernel.net.IntIpv6
-import top.sankokomi.wirebare.kernel.net.IpVersion
+import top.sankokomi.wirebare.kernel.net.IntIPv6
+import top.sankokomi.wirebare.kernel.net.IPVersion
 
 
 /**
  * 将 [Int] 所代表的 IP 地址转换为 %s:%s:%s:%s 的形式
  * */
-internal val Int.convertIpv4ToString: String
+internal val Int.convertIPv4ToString: String
     get() = String.format(
         "%s.%s.%s.%s",
         this shr 24 and 0xFF,
@@ -40,7 +40,7 @@ internal val Int.convertIpv4ToString: String
         this and 0xFF
     )
 
-internal val String.convertIpv4ToInt: Int
+internal val String.convertIPv4ToInt: Int
     get() = split(".").let { numbers ->
         try {
             return@let (numbers[0].toInt() and 0xFF shl 24) or
@@ -52,7 +52,7 @@ internal val String.convertIpv4ToInt: Int
         }
     }
 
-internal val IntIpv6.convertIpv6ToString: String
+internal val IntIPv6.convertIPv6ToString: String
     get() = String.format(
         "%s:%s:%s:%s:%s:%s:%s:%s",
         (this.high64 shr 48 and 0xFFFF).toString(16),
@@ -65,10 +65,10 @@ internal val IntIpv6.convertIpv6ToString: String
         (this.low64 and 0xFFFF).toString(16)
     )
 
-internal val String.convertIpv6ToInt: IntIpv6
+internal val String.convertIPv6ToInt: IntIPv6
     get() = split(":").let { numbers ->
         try {
-            return@let IntIpv6(
+            return@let IntIPv6(
                 (numbers[0].toLong(16) and 0xFFFF shl 48) or
                         (numbers[1].toLong(16) and 0xFFFF shl 32) or
                         (numbers[2].toLong(16) and 0xFFFF shl 16) or
@@ -89,12 +89,12 @@ internal val Short.convertPortToString: String
 internal val Short.convertPortToInt: Int
     get() = this.toInt() and 0xFFFF
 
-internal val String.ipVersion: IpVersion?
+internal val String.ipVersion: IPVersion?
     get() {
         try {
-            this.convertIpv4ToInt
-            return IpVersion.IPv4
+            this.convertIPv4ToInt
+            return IPVersion.IPv4
         } catch (_: Exception) {
-            return IpVersion.IPv6
+            return IPVersion.IPv6
         }
     }

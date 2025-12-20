@@ -43,7 +43,7 @@ import java.nio.ByteBuffer
  *
  * */
 internal class UdpHeader(
-    internal val ipHeader: IIpHeader,
+    internal val ipHeader: IPHeader,
     internal val packet: ByteArray,
     private val offset: Int
 ) {
@@ -81,29 +81,9 @@ internal class UdpHeader(
         }.also {
             it.writeShort(8.toShort(), offset + OFFSET_LENGTH)
         }
-        when (ipHeader) {
-            is Ipv4Header -> {
-                return UdpHeader(
-                    Ipv4Header(array, 0).also {
-                        it.totalLength = ipHeader.headerLength + UDP_HEADER_LENGTH
-                    },
-                    array,
-                    offset
-                )
-            }
-
-            is Ipv6Header -> {
-                return UdpHeader(
-                    Ipv6Header(array, 0),
-                    array,
-                    offset
-                )
-            }
-
-            else -> {
-                throw NotImplementedError("Unknow ip header ${ipHeader::class.java.name}")
-            }
-        }
+        val ipHeader = IPHeader.parse(array, array.size, 0)!!
+        ipHeader.totalLength = ipHeader.headerLength + UDP_HEADER_LENGTH
+        return UdpHeader(ipHeader, array, offset)
     }
 
     /**
@@ -123,7 +103,7 @@ internal class UdpHeader(
     private fun calculateChecksum(): Short {
         val dataLength = ipHeader.dataLength
         var sum = ipHeader.addressSum
-        sum += BigInteger.valueOf((ipHeader.protocol.toInt() and 0xF).toLong())
+        sum += BigInteger.valueOf((ipHeader.dataProtocol.toInt() and 0xF).toLong())
         sum += BigInteger.valueOf(dataLength.toLong())
         sum += packet.calculateSum(offset, dataLength)
         var next = sum shr 16
