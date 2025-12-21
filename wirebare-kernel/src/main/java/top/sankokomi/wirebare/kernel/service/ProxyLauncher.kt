@@ -57,7 +57,7 @@ internal class ProxyLauncher private constructor(
                     .addAddress(ipv4Address, ipv4PrefixLength)
                     .allowFamily(OsConstants.AF_INET)
                     .setBlocking(true)
-                if (enableIpv6) {
+                if (enableIPv6) {
                     builder.addAddress(ipv6Address, ipv6PrefixLength)
                         .allowFamily(OsConstants.AF_INET6)
                 }

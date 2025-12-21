@@ -78,7 +78,7 @@ class WireBareConfiguration internal constructor() {
      *
      * 一般来说，ipv6 失败以后会退化成为 ipv4
      * */
-    var enableIpv6: Boolean = false
+    var enableIPv6: Boolean = false
 
     /**
      * TUN 网卡 ipv6 地址
@@ -194,7 +194,7 @@ class WireBareConfiguration internal constructor() {
             it.ipv4ProxyAddress = ipv4ProxyAddress.copy()
             it.ipv6Address = ipv6Address
             it.ipv6PrefixLength = ipv6PrefixLength
-            it.enableIpv6 = enableIpv6
+            it.enableIPv6 = enableIPv6
             it.ipv6ProxyAddress = ipv6ProxyAddress.copy()
             it.routes.addAll(routes)
             it.dnsServers.addAll(dnsServers)

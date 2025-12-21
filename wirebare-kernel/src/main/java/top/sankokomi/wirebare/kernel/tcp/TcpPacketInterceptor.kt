@@ -24,6 +24,14 @@
 
 package top.sankokomi.wirebare.kernel.tcp
 
+import android.os.SystemClock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import top.sankokomi.wirebare.kernel.common.DynamicConfiguration
+import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
 import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpVirtualGateway
 import top.sankokomi.wirebare.kernel.net.IPHeader
@@ -38,6 +46,11 @@ import top.sankokomi.wirebare.kernel.service.WireBareProxyService
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.convertPortToInt
 import java.io.OutputStream
+import java.util.Queue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * TCP 报文拦截器
@@ -52,7 +65,15 @@ import java.io.OutputStream
 internal class TcpPacketInterceptor(
     private val configuration: WireBareConfiguration,
     proxyService: WireBareProxyService
-) : PacketInterceptor {
+) : PacketInterceptor, CoroutineScope by proxyService {
+
+    private class PendingPacket(
+        val packet: Packet,
+        val ipHeader: IPHeader,
+        val tcpHeader: TcpHeader,
+        val outputStream: OutputStream,
+        val time: Long = SystemClock.elapsedRealtime()
+    )
 
     private val sessionStore: TcpSessionStore = TcpSessionStore()
 
@@ -72,13 +93,13 @@ internal class TcpPacketInterceptor(
     /**
      * 代理服务器的端口集合
      * */
-    private val ports = hashSetOf<Port>()
+    internal val ports = hashSetOf<Port>()
 
     /**
      * 代理服务器
      * */
-    private val servers = mutableListOf<TcpProxyServer>().apply {
-        for (i in 1..configuration.tcpProxyServerCount) {
+    private val servers = mutableListOf<TcpProxyServer>().also { serverList ->
+        repeat(configuration.tcpProxyServerCount) {
             val server = TcpProxyServer(
                 sessionStore,
                 TcpVirtualGateway(configuration),
@@ -87,7 +108,85 @@ internal class TcpPacketInterceptor(
             )
             server.dispatch()
             ports.add(server.proxyServerPort)
-            add(server)
+            serverList.add(server)
+        }
+    }
+
+    private val lock = ReentrantLock(true)
+    private val condition = lock.newCondition()
+    private val reqPacketQueue = LinkedBlockingQueue<PendingPacket>()
+    private val rspPacketQueue = LinkedBlockingQueue<PendingPacket>()
+    private var waitingReqTransmit = AtomicBoolean(false)
+    private var waitingRspTransmit = AtomicBoolean(false)
+
+    init {
+        launch(Dispatchers.IO) {
+            while (isActive) {
+                lock.withLock {
+                    condition.await()
+                }
+                transmitPacket()
+            }
+        }
+    }
+
+    private fun transmitPacket() {
+        if (!waitingReqTransmit.get()) {
+            tryTransmit(
+                "REQ",
+                reqPacketQueue,
+                WireBare.dynamicConfig.reqMaxBandwidth,
+                waitingReqTransmit
+            )
+        }
+        if (!waitingRspTransmit.get()) {
+            tryTransmit(
+                "RSP",
+                rspPacketQueue,
+                WireBare.dynamicConfig.rspMaxBandwidth,
+                waitingRspTransmit
+            )
+        }
+    }
+
+    private fun tryTransmit(
+        type: String,
+        packetQueue: Queue<PendingPacket>,
+        maxBandwidth: DynamicConfiguration.Bandwidth,
+        waitingTransmit: AtomicBoolean
+    ) {
+        while (packetQueue.isNotEmpty()) {
+            val pendingPacket = packetQueue.peek() ?: break
+            if (maxBandwidth.checkTimeout(pendingPacket.time)) {
+                // 超时了，下一个
+                packetQueue.poll()
+            } else {
+                val nextCanTransmitDelay = maxBandwidth.nextCanTransmit(pendingPacket.packet.length)
+                if (nextCanTransmitDelay > 0L) {
+                    // 需要等待配额足够
+                    WireBareLogger.error("[$type] 带宽配额不足 需等待 $nextCanTransmitDelay 毫秒")
+                    waitingTransmit.set(true)
+                    launch(Dispatchers.IO) {
+                        delay(nextCanTransmitDelay)
+                        WireBareLogger.error("[$type] 配额已足够 重新启动")
+                        waitingTransmit.set(false)
+                        lock.withLock {
+                            condition.signal()
+                        }
+                    }
+                    break
+                } else {
+                    // 可以立即发送
+                    packetQueue.poll()
+                    transmit(
+                        pendingPacket.packet,
+                        pendingPacket.ipHeader,
+                        pendingPacket.tcpHeader,
+                        pendingPacket.outputStream
+                    )
+                    waitingTransmit.set(false)
+                }
+            }
         }
     }
 
@@ -96,13 +195,44 @@ internal class TcpPacketInterceptor(
         packet: Packet,
         outputStream: OutputStream
     ) {
-        if (!configuration.enableIpv6 && ipHeader.ipVersion == IPVersion.IPv6) {
+        if (ipHeader.ipVersion == IPVersion.IPv6 && !configuration.enableIPv6) {
             WireBareLogger.error("未启用 IPv6 代理")
             return
         }
-
         val tcpHeader = TcpHeader(ipHeader, packet.packet, ipHeader.headerLength)
+        val sourcePort = tcpHeader.sourcePort
+        if (!ports.contains(sourcePort)) {
+            // 来源不是代理服务器，说明该数据包是被代理客户端发出来的请求包
+            if (WireBare.dynamicConfig.reqMaxBandwidth.max <= 0L) {
+                transmit(packet, ipHeader, tcpHeader, outputStream)
+            } else {
+                reqPacketQueue.put(PendingPacket(packet, ipHeader, tcpHeader, outputStream))
+                if (!waitingReqTransmit.get()) {
+                    lock.withLock {
+                        condition.signal()
+                    }
+                }
+            }
+        } else {
+            if (WireBare.dynamicConfig.rspMaxBandwidth.max <= 0L) {
+                transmit(packet, ipHeader, tcpHeader, outputStream)
+            } else {
+                rspPacketQueue.put(PendingPacket(packet, ipHeader, tcpHeader, outputStream))
+                if (!waitingRspTransmit.get()) {
+                    lock.withLock {
+                        condition.signal()
+                    }
+                }
+            }
+        }
+    }
 
+    private fun transmit(
+        packet: Packet,
+        ipHeader: IPHeader,
+        tcpHeader: TcpHeader,
+        outputStream: OutputStream
+    ) {
         // 来源地址和端口
         val sourceAddress = ipHeader.sourceAddress
         val sourcePort = tcpHeader.sourcePort
@@ -133,10 +263,10 @@ internal class TcpPacketInterceptor(
 
             WireBareLogger.info(
                 "[${ipHeader.ipVersion.name}-TCP] 客户端 $sourcePort >> 代理服务器 $proxyServerPort " +
-                        "seq = ${tcpHeader.sequenceNumber.toUInt()} ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
-                        "flag = ${
-                            tcpHeader.flag.toUByte().toString(2).padStart(6, '0')
-                        } length = ${tcpHeader.dataLength}"
+                        "seq = ${tcpHeader.sequenceNumber.toUInt()} " +
+                        "ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
+                        "flag = ${tcpHeader.flag.toUByte().toString(2).padStart(6, '0')} " +
+                        "length = ${tcpHeader.dataLength}"
             )
         } else {
             // 来源是代理服务器，说明该数据包是响应包
@@ -160,10 +290,10 @@ internal class TcpPacketInterceptor(
 
             WireBareLogger.info(
                 "[${ipHeader.ipVersion.name}-TCP] 客户端 $destinationPort << 代理服务器 $sourcePort " +
-                        "seq = ${tcpHeader.sequenceNumber.toUInt()} ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
-                        "flag = ${
-                            tcpHeader.flag.toUByte().toString(2).padStart(6, '0')
-                        } length = ${tcpHeader.dataLength}"
+                        "seq = ${tcpHeader.sequenceNumber.toUInt()} " +
+                        "ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
+                        "flag = ${tcpHeader.flag.toUByte().toString(2).padStart(6, '0')} " +
+                        "length = ${tcpHeader.dataLength}"
             )
         }
 
