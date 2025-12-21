@@ -110,7 +110,7 @@ abstract class WireBareProxyService : VpnService(),
         WireBareLogger.info("Service stopWireBare")
         launch(Dispatchers.IO) {
             fd.await().closeSafely()
-            cancel()
+            this@WireBareProxyService.cancel()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()

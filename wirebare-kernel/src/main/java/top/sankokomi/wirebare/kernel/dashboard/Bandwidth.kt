@@ -22,49 +22,13 @@
  * SOFTWARE.
  */
 
-package top.sankokomi.wirebare.kernel.common
+package top.sankokomi.wirebare.kernel.dashboard
 
-import androidx.annotation.IntRange
-
-class DynamicConfiguration {
-
-    /**
-     * 请求丢包概率
-     * */
-    @Volatile
-    @IntRange(from = -1, to = 100)
-    var reqPacketLossProb: Int = -1
-
-    /**
-     * 响应丢包概率
-     * */
-    @Volatile
-    @IntRange(from = -1, to = 100)
-    var rspPacketLossProb: Int = -1
-
-    /**
-     * 带宽计算间隔
-     *
-     * 单位：ms
-     * */
-    @Volatile
-    @IntRange(from = 10L)
-    var bandwidthStatInterval: Long = 2000L
-
-    /**
-     * 请求最大带宽
-     *
-     * 单位：KB/s
-     * */
-    @Volatile
-    var reqBandwidthLimiter: BandwidthLimiter = BandwidthLimiter()
-
-    /**
-     * 响应最大带宽
-     *
-     * 单位：KB/s
-     * */
-    @Volatile
-    var rspBandwidthLimiter: BandwidthLimiter = BandwidthLimiter()
-
-}
+/**
+ * @param value 带宽数值，单位：Byte/s
+ * @param time 计算的时间
+ * */
+data class Bandwidth(
+    val value: Double,
+    val time: Long
+)

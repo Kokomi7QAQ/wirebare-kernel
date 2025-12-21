@@ -22,49 +22,20 @@
  * SOFTWARE.
  */
 
-package top.sankokomi.wirebare.kernel.common
+package top.sankokomi.wirebare.kernel.dashboard
 
-import androidx.annotation.IntRange
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import top.sankokomi.wirebare.kernel.common.DynamicConfiguration
 
-class DynamicConfiguration {
+object WireBareDashboard {
 
-    /**
-     * 请求丢包概率
-     * */
-    @Volatile
-    @IntRange(from = -1, to = 100)
-    var reqPacketLossProb: Int = -1
-
-    /**
-     * 响应丢包概率
-     * */
-    @Volatile
-    @IntRange(from = -1, to = 100)
-    var rspPacketLossProb: Int = -1
+    internal val mutableBandwidthFlow = MutableSharedFlow<Bandwidth>(10, 0, BufferOverflow.SUSPEND)
 
     /**
-     * 带宽计算间隔
-     *
-     * 单位：ms
+     * 带宽，可以在 [DynamicConfiguration.bandwidthStatInterval] 中设置回调频率
      * */
-    @Volatile
-    @IntRange(from = 10L)
-    var bandwidthStatInterval: Long = 2000L
-
-    /**
-     * 请求最大带宽
-     *
-     * 单位：KB/s
-     * */
-    @Volatile
-    var reqBandwidthLimiter: BandwidthLimiter = BandwidthLimiter()
-
-    /**
-     * 响应最大带宽
-     *
-     * 单位：KB/s
-     * */
-    @Volatile
-    var rspBandwidthLimiter: BandwidthLimiter = BandwidthLimiter()
-
+    val bandwidthFlow: SharedFlow<Bandwidth> = mutableBandwidthFlow.asSharedFlow()
 }

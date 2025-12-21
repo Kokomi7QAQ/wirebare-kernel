@@ -30,9 +30,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import top.sankokomi.wirebare.kernel.common.DynamicConfiguration
+import top.sankokomi.wirebare.kernel.common.BandwidthLimiter
 import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.common.WireBareConfiguration
+import top.sankokomi.wirebare.kernel.dashboard.BandwidthStat
+import top.sankokomi.wirebare.kernel.dashboard.WireBareDashboard
 import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpVirtualGateway
 import top.sankokomi.wirebare.kernel.net.IPHeader
 import top.sankokomi.wirebare.kernel.net.IPVersion
@@ -76,6 +78,8 @@ internal class TcpPacketInterceptor(
     )
 
     private val sessionStore: TcpSessionStore = TcpSessionStore()
+
+    private val bandwidthStat = BandwidthStat(WireBareDashboard.mutableBandwidthFlow, proxyService)
 
     /**
      * 虚拟网卡的 ip 地址，也就是代理服务器的 ip 地址
@@ -135,7 +139,7 @@ internal class TcpPacketInterceptor(
             tryTransmit(
                 "REQ",
                 reqPacketQueue,
-                WireBare.dynamicConfig.reqMaxBandwidth,
+                WireBare.dynamicConfig.reqBandwidthLimiter,
                 waitingReqTransmit
             )
         }
@@ -143,7 +147,7 @@ internal class TcpPacketInterceptor(
             tryTransmit(
                 "RSP",
                 rspPacketQueue,
-                WireBare.dynamicConfig.rspMaxBandwidth,
+                WireBare.dynamicConfig.rspBandwidthLimiter,
                 waitingRspTransmit
             )
         }
@@ -152,16 +156,17 @@ internal class TcpPacketInterceptor(
     private fun tryTransmit(
         type: String,
         packetQueue: Queue<PendingPacket>,
-        maxBandwidth: DynamicConfiguration.Bandwidth,
+        maxBandwidthLimiter: BandwidthLimiter,
         waitingTransmit: AtomicBoolean
     ) {
         while (packetQueue.isNotEmpty()) {
             val pendingPacket = packetQueue.peek() ?: break
-            if (maxBandwidth.checkTimeout(pendingPacket.time)) {
+            if (maxBandwidthLimiter.checkTimeout(pendingPacket.time)) {
                 // 超时了，下一个
                 packetQueue.poll()
             } else {
-                val nextCanTransmitDelay = maxBandwidth.nextCanTransmit(pendingPacket.packet.length)
+                val nextCanTransmitDelay =
+                    maxBandwidthLimiter.nextCanTransmit(pendingPacket.packet.length)
                 if (nextCanTransmitDelay > 0L) {
                     // 需要等待配额足够
                     WireBareLogger.error("[$type] 带宽配额不足 需等待 $nextCanTransmitDelay 毫秒")
@@ -203,7 +208,7 @@ internal class TcpPacketInterceptor(
         val sourcePort = tcpHeader.sourcePort
         if (!ports.contains(sourcePort)) {
             // 来源不是代理服务器，说明该数据包是被代理客户端发出来的请求包
-            if (WireBare.dynamicConfig.reqMaxBandwidth.max <= 0L) {
+            if (WireBare.dynamicConfig.reqBandwidthLimiter.max <= 0L) {
                 transmit(packet, ipHeader, tcpHeader, outputStream)
             } else {
                 reqPacketQueue.put(PendingPacket(packet, ipHeader, tcpHeader, outputStream))
@@ -214,7 +219,7 @@ internal class TcpPacketInterceptor(
                 }
             }
         } else {
-            if (WireBare.dynamicConfig.rspMaxBandwidth.max <= 0L) {
+            if (WireBare.dynamicConfig.rspBandwidthLimiter.max <= 0L) {
                 transmit(packet, ipHeader, tcpHeader, outputStream)
             } else {
                 rspPacketQueue.put(PendingPacket(packet, ipHeader, tcpHeader, outputStream))
@@ -233,6 +238,7 @@ internal class TcpPacketInterceptor(
         tcpHeader: TcpHeader,
         outputStream: OutputStream
     ) {
+        bandwidthStat.onPacketTransmit(packet.length)
         // 来源地址和端口
         val sourceAddress = ipHeader.sourceAddress
         val sourcePort = tcpHeader.sourcePort
