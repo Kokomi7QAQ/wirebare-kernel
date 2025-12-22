@@ -38,4 +38,18 @@ object WireBareDashboard {
      * 带宽，可以在 [DynamicConfiguration.bandwidthStatInterval] 中设置回调频率
      * */
     val bandwidthFlow: SharedFlow<Bandwidth> = mutableBandwidthFlow.asSharedFlow()
+
+    internal val mutableReqBandwidthFlow = MutableSharedFlow<Bandwidth>(10, 0, BufferOverflow.SUSPEND)
+
+    /**
+     * 请求带宽，可以在 [DynamicConfiguration.bandwidthStatInterval] 中设置回调频率
+     * */
+    val reqBandwidthFlow: SharedFlow<Bandwidth> = mutableReqBandwidthFlow.asSharedFlow()
+
+    internal val mutableRspBandwidthFlow = MutableSharedFlow<Bandwidth>(10, 0, BufferOverflow.SUSPEND)
+
+    /**
+     * 响应带宽，可以在 [DynamicConfiguration.bandwidthStatInterval] 中设置回调频率
+     * */
+    val rspBandwidthFlow: SharedFlow<Bandwidth> = mutableRspBandwidthFlow.asSharedFlow()
 }

@@ -80,6 +80,8 @@ internal class TcpPacketInterceptor(
     private val sessionStore: TcpSessionStore = TcpSessionStore()
 
     private val bandwidthStat = BandwidthStat(WireBareDashboard.mutableBandwidthFlow, proxyService)
+    private val reqBandwidthStat = BandwidthStat(WireBareDashboard.mutableReqBandwidthFlow, proxyService)
+    private val rspBandwidthStat = BandwidthStat(WireBareDashboard.mutableRspBandwidthFlow, proxyService)
 
     /**
      * 虚拟网卡的 ip 地址，也就是代理服务器的 ip 地址
@@ -249,6 +251,7 @@ internal class TcpPacketInterceptor(
 
         if (!ports.contains(sourcePort)) {
             // 来源不是代理服务器，说明该数据包是被代理客户端发出来的请求包
+            reqBandwidthStat.onPacketTransmit(packet.length)
             sessionStore.insert(
                 sourcePort, destinationAddress, destinationPort
             )
@@ -276,6 +279,7 @@ internal class TcpPacketInterceptor(
             )
         } else {
             // 来源是代理服务器，说明该数据包是响应包
+            rspBandwidthStat.onPacketTransmit(packet.length)
             val session = sessionStore.query(destinationPort)
                 ?: throw IllegalStateException(
                     "发现一个未建立会话但有响应的连接 端口 $destinationPort"
