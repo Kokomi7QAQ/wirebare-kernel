@@ -43,6 +43,7 @@ import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.closeSafely
 import top.sankokomi.wirebare.kernel.util.defaultNotification
 
+@Suppress("VpnServicePolicy")
 abstract class WireBareProxyService : VpnService(),
     CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.IO) {
 
@@ -112,7 +113,12 @@ abstract class WireBareProxyService : VpnService(),
             fd.await().closeSafely()
             this@WireBareProxyService.cancel()
         }
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         stopSelf()
     }
 
