@@ -45,7 +45,7 @@ internal abstract class NioProxyServer : ProxyServer() {
     final override suspend fun process() {
         var select = 0
         while (isActive) {
-            select = selector.selectNow()
+            select = selector.select()
             if (select != 0) {
                 break
             }
