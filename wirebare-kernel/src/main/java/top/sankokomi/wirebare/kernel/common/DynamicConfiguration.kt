@@ -25,7 +25,9 @@
 package top.sankokomi.wirebare.kernel.common
 
 import androidx.annotation.IntRange
+import top.sankokomi.wirebare.kernel.annotation.Experimental
 
+@Experimental
 class DynamicConfiguration {
 
     /**
@@ -33,6 +35,7 @@ class DynamicConfiguration {
      * */
     @Volatile
     @IntRange(from = -1, to = 100)
+    @Experimental
     var reqPacketLossProb: Int = -1
 
     /**
@@ -40,6 +43,7 @@ class DynamicConfiguration {
      * */
     @Volatile
     @IntRange(from = -1, to = 100)
+    @Experimental
     var rspPacketLossProb: Int = -1
 
     /**
@@ -49,6 +53,7 @@ class DynamicConfiguration {
      * */
     @Volatile
     @IntRange(from = 10L)
+    @Experimental
     var bandwidthStatInterval: Long = 2000L
 
     /**
@@ -57,6 +62,7 @@ class DynamicConfiguration {
      * 单位：KB/s
      * */
     @Volatile
+    @Experimental
     var reqBandwidthLimiter: BandwidthLimiter = BandwidthLimiter()
 
     /**
@@ -65,6 +71,7 @@ class DynamicConfiguration {
      * 单位：KB/s
      * */
     @Volatile
+    @Experimental
     var rspBandwidthLimiter: BandwidthLimiter = BandwidthLimiter()
 
 }

@@ -26,14 +26,16 @@ package top.sankokomi.wirebare.kernel.common
 
 import android.os.SystemClock
 import androidx.annotation.IntRange
+import top.sankokomi.wirebare.kernel.annotation.Experimental
 import kotlin.math.min
 
 /**
  * @param max 最大带宽 单位：KB/s
  * @param timeout 超时时间，由于带宽限制缓存的数据包超过此时间后将被丢弃 单位：ms
  * */
+@Experimental
 class BandwidthLimiter(
-    @IntRange(from = -1L)
+    @field:IntRange(from = -1L)
     val max: Long = -1L,
     val timeout: Long = -1L
 ) {

@@ -31,10 +31,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import top.sankokomi.wirebare.kernel.annotation.Experimental
 import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.service.WireBareProxyService
 import java.util.concurrent.atomic.AtomicLong
 
+@Experimental
 class BandwidthStat(
     private val flow: MutableSharedFlow<Bandwidth>,
     proxyService: WireBareProxyService
