@@ -36,9 +36,9 @@ class WireBareConfiguration internal constructor() {
     var jks: JKS? = null
 
     /**
-     * 代理服务的传输单元大小，默认 4096 字节，建议不要设置得太小
+     * 代理服务的传输单元大小，默认 1400 字节
      * */
-    var mtu: Int = 4096
+    var mtu: Int = 1400
 
     /**
      * TCP 代理服务器的数量，默认 1 个，多个代理服务器会构建多个拦截器
