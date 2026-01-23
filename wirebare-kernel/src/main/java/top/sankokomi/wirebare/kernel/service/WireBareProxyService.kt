@@ -75,6 +75,11 @@ abstract class WireBareProxyService : VpnService(),
     protected open var notification: WireBareProxyService.() -> Notification =
         { defaultNotification(channelId) }
 
+    override fun onCreate() {
+        super.onCreate()
+        WireBare attach this
+    }
+
     final override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         WireBareLogger.info("Service startCommand")
         intent ?: return START_NOT_STICKY
@@ -126,5 +131,6 @@ abstract class WireBareProxyService : VpnService(),
         WireBareLogger.info("Service destroy")
         super.onDestroy()
         WireBare.notifyVpnStatusChanged(ProxyStatus.DEAD)
+        WireBare detach this
     }
 }

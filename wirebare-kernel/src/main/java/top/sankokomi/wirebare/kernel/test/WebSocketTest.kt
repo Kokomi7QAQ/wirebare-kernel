@@ -12,12 +12,17 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import top.sankokomi.wirebare.kernel.annotation.Test
+import top.sankokomi.wirebare.kernel.common.WireBare
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.concurrent.TimeUnit
+import javax.net.SocketFactory
 
 @Test
-fun testWebSocket(duration: Long = 60000L) {
-    val manager = WebSocketCommunicationManager()
+fun testWebSocket(duration: Long = 60000L, protected: Boolean) {
+    val manager = WebSocketCommunicationManager(protected)
     manager.startCommunication()
     CoroutineScope(Dispatchers.IO).launch {
         delay(duration)
@@ -26,10 +31,12 @@ fun testWebSocket(duration: Long = 60000L) {
     }
 }
 
-class WebSocketCommunicationManager {
+class WebSocketCommunicationManager(protected: Boolean) {
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
-        .build()
+        .socketFactory(
+            if (protected) ProtectedSocketFactory() else SocketFactory.getDefault()
+        ).build()
 
     private var clientWebSocket: WebSocket? = null
 
@@ -77,6 +84,53 @@ class WebSocketCommunicationManager {
         timerJob?.cancel()
         clientWebSocket?.close(1000, null)
         client.dispatcher.executorService.shutdown()
+    }
+}
+
+private class ProtectedSocketFactory : SocketFactory() {
+
+    override fun createSocket(): Socket? {
+        return Socket().protect()
+    }
+
+    override fun createSocket(
+        host: String?,
+        port: Int
+    ): Socket? {
+        return Socket(host, port).protect()
+    }
+
+    override fun createSocket(
+        host: InetAddress?,
+        port: Int
+    ): Socket? {
+        return Socket(host, port).protect()
+    }
+
+    override fun createSocket(
+        host: String?,
+        port: Int,
+        localHost: InetAddress?,
+        localPort: Int
+    ): Socket? {
+        return Socket(host, port, localHost, localPort).protect()
+    }
+
+    override fun createSocket(
+        address: InetAddress?,
+        port: Int,
+        localAddress: InetAddress?,
+        localPort: Int
+    ): Socket? {
+        return Socket(address, port, localAddress, localPort).protect()
+    }
+
+    private fun Socket.protect(): Socket {
+        val socket = this
+        // must bind before we protect it
+        socket.bind(InetSocketAddress(0))
+        WireBare protect socket
+        return this
     }
 }
 

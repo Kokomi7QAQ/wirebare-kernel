@@ -26,6 +26,7 @@ package top.sankokomi.wirebare.kernel.common
 
 import android.content.Context
 import android.content.Intent
+import android.net.VpnService
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.MainThread
@@ -39,10 +40,14 @@ import top.sankokomi.wirebare.kernel.common.WireBare.stopProxy
 import top.sankokomi.wirebare.kernel.service.WireBareProxyService
 import top.sankokomi.wirebare.kernel.util.LogLevel
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
+import java.net.DatagramSocket
+import java.net.Socket
 
 object WireBare {
 
     private lateinit var appContext: Context
+
+    private var vpnService: WireBareProxyService? = null
 
     private var _configuration: WireBareConfiguration? = null
 
@@ -152,8 +157,45 @@ object WireBare {
             WireBareLogger.LOG_LEVEL = level
         }
 
+    /**
+     * This function can only be called when proxy service is running.
+     *
+     * @see [VpnService.protect]
+     * */
+    infix fun protect(socket: Int): Boolean {
+        return vpnService?.protect(socket) ?: false
+    }
+
+    /**
+     * This function can only be called when proxy service is running.
+     *
+     * @see [VpnService.protect]
+     * */
+    infix fun protect(socket: Socket): Boolean {
+        return vpnService?.protect(socket) ?: false
+    }
+
+    /**
+     * This function can only be called when proxy service is running.
+     *
+     * @see [VpnService.protect]
+     * */
+    infix fun protect(socket: DatagramSocket): Boolean {
+        return vpnService?.protect(socket) ?: false
+    }
+
     internal infix fun attach(context: Context) {
         appContext = context
+    }
+
+    internal infix fun attach(service: WireBareProxyService) {
+        vpnService = service
+    }
+
+    internal infix fun detach(service: WireBareProxyService) {
+        if (vpnService == service) {
+            vpnService = null
+        }
     }
 
     internal fun notifyVpnStatusChanged(newStatus: ProxyStatus) {
