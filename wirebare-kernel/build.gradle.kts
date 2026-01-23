@@ -50,4 +50,6 @@ dependencies {
     implementation(libs.bouncycastle.bcpkix)
     implementation(libs.bouncycastle.bcprov)
     implementation(libs.brotli.dec)
+
+    implementation(libs.okhttp)
 }

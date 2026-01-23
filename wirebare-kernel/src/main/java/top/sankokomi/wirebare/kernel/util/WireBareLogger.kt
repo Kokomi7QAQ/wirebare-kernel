@@ -106,6 +106,10 @@ internal object WireBareLogger {
         }
     }
 
+    internal fun test(tag: String, msg: Any?) {
+        Log.e(tag, msg.toString())
+    }
+
     internal fun inetVerbose(session: TcpSession, msg: String) {
         verbose("${tcpPrefix(session)} >> ${session.destinationAddress}:${session.destinationPort} $msg")
     }
