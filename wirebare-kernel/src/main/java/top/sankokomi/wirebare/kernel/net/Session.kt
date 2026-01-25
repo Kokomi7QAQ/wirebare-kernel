@@ -24,24 +24,69 @@
 
 package top.sankokomi.wirebare.kernel.net
 
-interface Session {
+import top.sankokomi.wirebare.kernel.util.sourceUid
+
+/**
+ * the session of connection
+ * */
+abstract class Session(
     /**
-     * 会话所属的协议
+     * the protocol of this session
+     *
+     * @see Protocol
      * */
-    val protocol: Protocol
+    val protocol: Protocol,
 
     /**
-     * 会话来源端口
+     * the source ip address of this session
      * */
-    val sourcePort: Port
+    val sourceAddress: IpAddress,
 
     /**
-     * 会话目的地址
+     * the source port of this session
      * */
-    val destinationAddress: IpAddress
+    val sourcePort: Port,
 
     /**
-     * 会话目的端口
+     * the destination ip address of this session
+     * */
+    val destinationAddress: IpAddress,
+
+    /**
+     * the destination port of this session
      * */
     val destinationPort: Port
+) {
+
+    /**
+     * the session owner's uid
+     * */
+    val sourceProcessUid: Int = sourceUid()
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as Session
+        if (sourceAddress != other.sourceAddress) return false
+        if (sourcePort != other.sourcePort) return false
+        if (destinationAddress != other.destinationAddress) return false
+        return destinationPort == other.destinationPort
+    }
+
+    override fun hashCode(): Int {
+        var result = sourceAddress.hashCode()
+        result = 31 * result + sourcePort.hashCode()
+        result = 31 * result + destinationAddress.hashCode()
+        result = 31 * result + destinationPort.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "{protocol = ${protocol.name}" +
+                "sourceAddress = $sourceAddress, " +
+                "sourcePort = $sourcePort, " +
+                "destinationAddress = $destinationAddress, " +
+                "destinationPort = $destinationPort}"
+    }
+
 }

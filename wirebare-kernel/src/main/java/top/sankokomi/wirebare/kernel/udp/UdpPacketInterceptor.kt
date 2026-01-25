@@ -60,12 +60,14 @@ internal class UdpPacketInterceptor(
     ) {
         val udpHeader = UdpHeader(ipHeader, packet.packet, ipHeader.headerLength)
 
+        val sourceAddress = ipHeader.sourceAddress
         val sourcePort = udpHeader.sourcePort
 
         val destinationAddress = ipHeader.destinationAddress
         val destinationPort = udpHeader.destinationPort
 
         val session = sessionStore.insert(
+            sourceAddress,
             sourcePort,
             destinationAddress,
             destinationPort

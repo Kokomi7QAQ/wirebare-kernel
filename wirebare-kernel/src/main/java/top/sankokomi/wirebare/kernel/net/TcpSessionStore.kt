@@ -32,6 +32,7 @@ class TcpSessionStore : SessionStore<Port, TcpSession>() {
      * @return 添加成功的会话
      * */
     internal fun insert(
+        sourceAddress: IpAddress,
         sourcePort: Port,
         destinationAddress: IpAddress,
         destinationPort: Port
@@ -45,7 +46,7 @@ class TcpSessionStore : SessionStore<Port, TcpSession>() {
             origin
         } else {
             TcpSession(
-                sourcePort, destinationAddress, destinationPort, this
+                sourceAddress, sourcePort, destinationAddress, destinationPort, this
             ).also { insertSession(sourcePort, it) }
         }
     }

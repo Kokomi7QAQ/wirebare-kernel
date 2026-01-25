@@ -32,12 +32,13 @@ class UdpSessionStore : SessionStore<Port, UdpSession>() {
      * @return 添加成功的会话
      * */
     internal fun insert(
+        sourceAddress: IpAddress,
         sourcePort: Port,
         destinationAddress: IpAddress,
         destinationPort: Port
     ): UdpSession {
         return UdpSession(
-            sourcePort, destinationAddress, destinationPort, this
+            sourceAddress, sourcePort, destinationAddress, destinationPort, this
         ).also { insertSession(sourcePort, it) }
     }
 

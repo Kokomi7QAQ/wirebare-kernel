@@ -262,7 +262,7 @@ internal class TcpPacketInterceptor(
             // 来源不是代理服务器，说明该数据包是被代理客户端发出来的请求包
             reqBandwidthStat.onPacketTransmit(packet.length)
             sessionStore.insert(
-                sourcePort, destinationAddress, destinationPort
+                sourceAddress, sourcePort, destinationAddress, destinationPort
             )
 
             // 根据端口号分配给固定的服务器

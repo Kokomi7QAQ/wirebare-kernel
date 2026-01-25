@@ -46,7 +46,7 @@ object WireBare {
 
     private const val TAG = "WireBare"
 
-    private lateinit var appContext: Context
+    internal lateinit var appContext: Context
 
     private var vpnService: WireBareProxyService? = null
 
