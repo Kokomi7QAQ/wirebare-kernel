@@ -39,7 +39,7 @@ internal fun Closeable?.closeSafely() {
     this ?: return
     try {
         close()
-    } catch (e: Exception) {
-        WireBareLogger.warn(e)
+    } catch (cause: Throwable) {
+        WireBareLogger.warn("Closeable", "[closeSafely]", cause)
     }
 }

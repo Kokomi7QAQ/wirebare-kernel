@@ -26,7 +26,7 @@ package top.sankokomi.wirebare.kernel.net
 
 import java.util.concurrent.ConcurrentHashMap
 
-abstract class SessionStore<K, S : Session<K>> {
+abstract class SessionStore<K, S : Session> {
 
     private val sessions: MutableMap<K, S> = ConcurrentHashMap(128)
 

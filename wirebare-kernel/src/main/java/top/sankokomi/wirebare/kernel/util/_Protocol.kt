@@ -48,7 +48,7 @@ internal val String.convertIPv4ToInt: Int
                     (numbers[2].toInt() and 0xFF shl 8) or
                     (numbers[3].toInt() and 0xFF)
         } catch (_: Exception) {
-            throw IllegalArgumentException("IPv4 地址格式错误 $this")
+            throw IllegalArgumentException("IPv4 address format failed $this")
         }
     }
 
@@ -79,7 +79,7 @@ internal val String.convertIPv6ToInt: IntIPv6
                         (numbers[7].toLong(16) and 0xFFFF)
             )
         } catch (_: Exception) {
-            throw IllegalArgumentException("IPv6 地址格式错误 $this")
+            throw IllegalArgumentException("IPv6 address format failed $this")
         }
     }
 

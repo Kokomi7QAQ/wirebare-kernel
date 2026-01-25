@@ -31,6 +31,7 @@ import java.math.BigInteger
 interface IPHeader {
 
     companion object {
+        private const val TAG = "IPHeader"
         private const val VERSION_4 = 0b0100
         private const val VERSION_6 = 0b0110
 
@@ -38,7 +39,7 @@ interface IPHeader {
             when (val ipVersion = packet.readByte(offset).toInt() ushr 4) {
                 VERSION_4 -> {
                     if (length < IPv4Header.MIN_IPV4_LENGTH) {
-                        WireBareLogger.warn("IPv4 报文长度小于 ${IPv4Header.MIN_IPV4_LENGTH}")
+                        WireBareLogger.warn(TAG, "IPv4 packet length($length) less than min(${IPv4Header.MIN_IPV4_LENGTH})")
                         return null
                     }
                     return IPv4Header(packet, 0)
@@ -46,24 +47,17 @@ interface IPHeader {
 
                 VERSION_6 -> {
                     if (length < IPv6Header.IPV6_STANDARD_LENGTH) {
-                        WireBareLogger.warn("IPv6 报文长度小于 ${IPv6Header.IPV6_STANDARD_LENGTH}")
+                        WireBareLogger.warn(TAG, "IPv6 packet length($length) less than min(${IPv6Header.IPV6_STANDARD_LENGTH})")
                         return null
                     }
                     return IPv6Header(packet, 0)
                 }
 
                 else -> {
-                    WireBareLogger.debug("未知的 IP 版本号 0b${ipVersion.toString(2)}")
+                    WireBareLogger.warn(TAG, "unknow IP version 0b${ipVersion.toString(2)}")
                     return null
                 }
             }
-        }
-
-        internal fun readIpVersion(
-            packet: Packet,
-            offset: Int
-        ): Int {
-            return packet.packet.readByte(offset).toInt() ushr 4
         }
     }
 

@@ -56,7 +56,7 @@ class WireBareSSLEngine(private val engine: SSLEngine) {
         callback: SSLCallback
     ) {
         if (phase == EnginePhase.Closed) {
-            throw IOException("SSL引擎已被关闭")
+            throw IOException("SSL engine closed")
         }
         if (phase == EnginePhase.HandshakeFinished) {
             val shouldRenegotiation = input[input.position()].toInt() == SSL_CONTENT_TYPE_HANDSHAKE
@@ -113,7 +113,7 @@ class WireBareSSLEngine(private val engine: SSLEngine) {
             val status = result.status
             output.flip()
             if (output.hasRemaining()) {
-                WireBareLogger.verbose("[$name] 输出加密数据")
+                WireBareLogger.verbose(TAG, "[$name] output encrypt data")
                 callback.encryptSuccess(output)
             }
             if (status == SSLEngineResult.Status.BUFFER_OVERFLOW) {
@@ -147,7 +147,7 @@ class WireBareSSLEngine(private val engine: SSLEngine) {
             output!!.flip()
             val producedSize = output.remaining()
             if (producedSize > 0) {
-                WireBareLogger.verbose("[$name] 输出解密数据")
+                WireBareLogger.verbose(TAG, "[$name] output decrypt data")
                 callback.decryptSuccess(output)
                 output = null
             }
@@ -218,7 +218,7 @@ class WireBareSSLEngine(private val engine: SSLEngine) {
                 }
 
                 else -> {
-                    throw IOException("SSL引擎状态错误，非握手阶段")
+                    throw IOException("illegal handshake state($status)")
                 }
             }
         }
@@ -241,7 +241,7 @@ class WireBareSSLEngine(private val engine: SSLEngine) {
             val status = result.status
             output.flip()
             if (output.hasRemaining()) {
-                WireBareLogger.verbose("[$name] 输出握手加密数据")
+                WireBareLogger.verbose(TAG, "[$name] output handshake encrypt data")
                 callback.encryptSuccess(output)
             }
             if (status == SSLEngineResult.Status.BUFFER_OVERFLOW) {
@@ -271,7 +271,7 @@ class WireBareSSLEngine(private val engine: SSLEngine) {
             output.flip()
             val producedSize = output.remaining()
             if (producedSize > 0) {
-                WireBareLogger.verbose("[$name] 输出握手解密数据")
+                WireBareLogger.verbose(TAG, "[$name] output handshake decrypt data")
                 callback.decryptSuccess(output)
             }
             if (status == SSLEngineResult.Status.BUFFER_OVERFLOW) {

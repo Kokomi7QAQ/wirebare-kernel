@@ -28,6 +28,8 @@ import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.newString
 import java.nio.ByteBuffer
 
+private const val TAG = "HttpHeaderParser"
+
 internal fun parseHttpRequestHeader(
     buffer: ByteBuffer,
     session: HttpSession
@@ -51,7 +53,7 @@ internal fun parseHttpRequestHeader(
             }
         }
     } catch (e: Exception) {
-        WireBareLogger.error("构造 HTTP 请求 时出现错误", e)
+        WireBareLogger.error(TAG, "parse HTTP request header failed", e)
     }
 }
 
@@ -83,7 +85,7 @@ internal fun parseHttpResponseHeader(
             }
         }
     } catch (e: Exception) {
-        WireBareLogger.error("构造 HTTP 响应时出现错误", e)
+        WireBareLogger.error(TAG, "parse HTTP response header failed", e)
     }
 }
 

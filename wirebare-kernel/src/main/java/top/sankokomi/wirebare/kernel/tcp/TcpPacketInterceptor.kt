@@ -69,6 +69,10 @@ internal class TcpPacketInterceptor(
     proxyService: WireBareProxyService
 ) : PacketInterceptor, CoroutineScope by proxyService {
 
+    companion object {
+        private const val TAG = "TcpPacketInterceptor"
+    }
+
     private class PendingPacket(
         val packet: Packet,
         val ipHeader: IPHeader,
@@ -80,8 +84,10 @@ internal class TcpPacketInterceptor(
     private val sessionStore: TcpSessionStore = TcpSessionStore()
 
     private val bandwidthStat = BandwidthStat(WireBareDashboard.mutableBandwidthFlow, proxyService)
-    private val reqBandwidthStat = BandwidthStat(WireBareDashboard.mutableReqBandwidthFlow, proxyService)
-    private val rspBandwidthStat = BandwidthStat(WireBareDashboard.mutableRspBandwidthFlow, proxyService)
+    private val reqBandwidthStat =
+        BandwidthStat(WireBareDashboard.mutableReqBandwidthFlow, proxyService)
+    private val rspBandwidthStat =
+        BandwidthStat(WireBareDashboard.mutableRspBandwidthFlow, proxyService)
 
     /**
      * 虚拟网卡的 ip 地址，也就是代理服务器的 ip 地址
@@ -171,11 +177,14 @@ internal class TcpPacketInterceptor(
                     maxBandwidthLimiter.nextCanTransmit(pendingPacket.packet.length)
                 if (nextCanTransmitDelay > 0L) {
                     // 需要等待配额足够
-                    WireBareLogger.error("[$type] 带宽配额不足 需等待 $nextCanTransmitDelay 毫秒")
+                    WireBareLogger.error(
+                        TAG,
+                        "[$type] bandwidth limit, should wait $nextCanTransmitDelay ms"
+                    )
                     waitingTransmit.set(true)
                     launch(Dispatchers.IO) {
                         delay(nextCanTransmitDelay)
-                        WireBareLogger.error("[$type] 配额已足够 重新启动")
+                        WireBareLogger.error(TAG, "[$type] bandwidth enough restart")
                         waitingTransmit.set(false)
                         lock.withLock {
                             condition.signal()
@@ -203,7 +212,7 @@ internal class TcpPacketInterceptor(
         outputStream: OutputStream
     ) {
         if (ipHeader.ipVersion == IPVersion.IPv6 && !configuration.enableIPv6) {
-            WireBareLogger.error("未启用 IPv6 代理")
+            WireBareLogger.error(TAG, "IPv6 proxy is disable")
             return
         }
         val tcpHeader = TcpHeader(ipHeader, packet.packet, ipHeader.headerLength)
@@ -270,20 +279,22 @@ internal class TcpPacketInterceptor(
             }
             tcpHeader.destinationPort = proxyServerPort
 
-            WireBareLogger.info(
-                "[${ipHeader.ipVersion.name}-TCP] 客户端 $sourcePort >> 代理服务器 $proxyServerPort " +
+            WireBareLogger.debug(
+                TAG,
+                "[${ipHeader.ipVersion.name}-TCP] client $sourcePort > proxy client $proxyServerPort " +
                         "seq = ${tcpHeader.sequenceNumber.toUInt()} " +
                         "ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
-                        "flag = ${tcpHeader.flag.toUByte().toString(2).padStart(6, '0')} " +
+                        "flag = 0b${tcpHeader.flag.toUByte().toString(2).padStart(6, '0')} " +
                         "length = ${tcpHeader.dataLength}"
             )
         } else {
             // 来源是代理服务器，说明该数据包是响应包
             rspBandwidthStat.onPacketTransmit(packet.length)
-            val session = sessionStore.query(destinationPort)
-                ?: throw IllegalStateException(
-                    "发现一个未建立会话但有响应的连接 端口 $destinationPort"
-                )
+            val session = sessionStore.query(
+                destinationPort
+            ) ?: throw IllegalStateException(
+                "cannot find session for response(port = $destinationPort)"
+            )
 
 //            if (tcpHeader.fin) {
 //                session.tryDrop()
@@ -298,11 +309,12 @@ internal class TcpPacketInterceptor(
                 IPVersion.IPv6 -> ipHeader.destinationAddress = tunIPv6Address
             }
 
-            WireBareLogger.info(
-                "[${ipHeader.ipVersion.name}-TCP] 客户端 $destinationPort << 代理服务器 $sourcePort " +
+            WireBareLogger.debug(
+                TAG,
+                "[${ipHeader.ipVersion.name}-TCP] client $destinationPort < proxy client $sourcePort " +
                         "seq = ${tcpHeader.sequenceNumber.toUInt()} " +
                         "ack = ${tcpHeader.acknowledgmentNumber.toUInt()} " +
-                        "flag = ${tcpHeader.flag.toUByte().toString(2).padStart(6, '0')} " +
+                        "flag = 0b${tcpHeader.flag.toUByte().toString(2).padStart(6, '0')} " +
                         "length = ${tcpHeader.dataLength}"
             )
         }

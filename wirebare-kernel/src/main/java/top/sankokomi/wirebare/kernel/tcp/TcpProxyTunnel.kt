@@ -64,11 +64,15 @@ import java.nio.channels.SocketChannel
 internal class TcpProxyTunnel(
     override val channel: SocketChannel,
     override val selector: Selector,
-    private val port: Port,
+    internal val port: Port,
     private val session: TcpSession,
     private val tcpVirtualGateway: TcpVirtualGateway,
     private val configuration: WireBareConfiguration
 ) : SocketNioTunnel(), TcpTunnel {
+
+    companion object {
+        private const val TAG = "TcpProxyTunnel"
+    }
 
     private lateinit var realTunnel: TcpRealTunnel
 
@@ -83,8 +87,9 @@ internal class TcpProxyTunnel(
     override fun onWrite(): Int {
         val length = super.onWrite()
         WireBareLogger.inetVerbose(
+            TAG,
             session,
-            "客户端 $port << 代理服务器 ${session.sourcePort} $length 字节"
+            "proxy client $port < proxy server $length bytes"
         )
         return length
     }
@@ -101,9 +106,10 @@ internal class TcpProxyTunnel(
             tcpVirtualGateway.onResponseFinished(session, this)
             return
         }
-        WireBareLogger.inetDebug(
+        WireBareLogger.inetVerbose(
+            TAG,
             session,
-            "客户端 >> 代理服务器 $port $length 字节"
+            "proxy client $port > proxy server $length bytes"
         )
         tcpVirtualGateway.onRequest(buffer, session, this)
     }

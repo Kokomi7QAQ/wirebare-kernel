@@ -77,7 +77,7 @@ class HttpTcpInterceptor(
     }
 
     private fun takeHttpSession(tcpSession: TcpSession): HttpSession {
-        return sessionMap.computeIfAbsent(tcpSession) {
+        return sessionMap.getOrPut(tcpSession) {
             val requestTime = System.currentTimeMillis()
             val request = HttpRequest().also {
                 it.requestTime = requestTime

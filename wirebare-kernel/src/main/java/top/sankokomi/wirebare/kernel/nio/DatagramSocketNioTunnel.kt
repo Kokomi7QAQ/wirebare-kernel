@@ -39,7 +39,7 @@ internal abstract class DatagramSocketNioTunnel : NioTunnel<DatagramChannel>(), 
     abstract override val channel: DatagramChannel
 
     final override fun onConnected() {
-        throw IllegalStateException("UDP 不是面向连接的通信，不要激活可连接操作")
+        throw IllegalStateException("UDP is not connection-oriented communication")
     }
 
     override fun readByteBuffer(buffer: ByteBuffer): Int = channel.read(buffer)

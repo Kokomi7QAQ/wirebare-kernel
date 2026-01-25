@@ -36,6 +36,10 @@ class HttpFlushInterceptor(
     private val responseCodec: ResponseSSLCodec? = null
 ) : HttpInterceptor {
 
+    companion object {
+        private const val TAG = "HttpFlushInterceptor"
+    }
+
     override fun onRequest(
         chain: HttpInterceptChain,
         buffer: ByteBuffer,
@@ -54,7 +58,7 @@ class HttpFlushInterceptor(
                         tunnel.writeToRemoteServer(target)
                     }
                 }
-            ) ?: WireBareLogger.warn("HTTPS 请求报文被解密了但却没有编码器")
+            ) ?: WireBareLogger.warn(TAG, "cannot find codec for request but it is plaintext")
         } else {
             tunnel.writeToRemoteServer(buffer)
         }
@@ -79,7 +83,7 @@ class HttpFlushInterceptor(
                         tunnel.writeToLocalClient(target)
                     }
                 }
-            ) ?: WireBareLogger.warn("HTTPS 响应报文被解密了但却没有编码器")
+            ) ?: WireBareLogger.warn(TAG, "cannot find codec for response but it is plaintext")
         } else {
             tunnel.writeToLocalClient(buffer)
         }

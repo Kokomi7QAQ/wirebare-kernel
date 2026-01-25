@@ -67,6 +67,10 @@ internal class TcpProxyServer(
     private val proxyService: WireBareProxyService
 ) : NioProxyServer(), NioCallback, CoroutineScope by proxyService {
 
+    companion object {
+        private const val TAG = "TcpProxyServer"
+    }
+
     internal val proxyServerPort: Port
 
     override val selector: Selector = Selector.open()
@@ -82,15 +86,13 @@ internal class TcpProxyServer(
         val proxySocketChannel = proxyServerSocketChannel.accept()
         val proxySocket = proxySocketChannel.socket()
 
+        // 这个端口号就是这次请求的来源端口号
+        val sourcePort = Port(proxySocket.port.toShort())
         val session = sessionStore.query(
-            // 这个端口号就是这次请求的来源端口号
-            Port(proxySocket.port.toShort())
-        ) ?: throw IllegalStateException("一个 TCP 请求因为找不到指定会话而代理失败")
+            sourcePort
+        ) ?: throw IllegalStateException("cannot find TCP session(port = $sourcePort")
 
-        WireBareLogger.inetDebug(
-            session,
-            "代理服务器 $proxyServerPort 代理开始"
-        )
+        WireBareLogger.inetInfo(TAG, session, "create tunnel")
 
         // 接收到被代理客户端的请求后开始代理
         val proxyTunnel = TcpProxyTunnel(

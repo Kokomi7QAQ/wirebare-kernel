@@ -52,9 +52,11 @@ internal class PacketDispatcher private constructor(
 ) : CoroutineScope by proxyService {
 
     companion object {
+        private const val TAG = "PacketDispatcher"
+
         internal infix fun ProxyLauncher.dispatchWith(builder: VpnService.Builder): ParcelFileDescriptor {
             val proxyDescriptor = builder.establish() ?: throw IllegalStateException(
-                "请先准备代理服务"
+                "establish vpn service failed, have you prepare vpn service first?"
             )
             PacketDispatcher(configuration, proxyDescriptor, proxyService).dispatch()
             return proxyDescriptor
@@ -98,7 +100,7 @@ internal class PacketDispatcher private constructor(
                             length = inputStream.read(buffer)
                         } catch (e: Exception) {
                             if (e !is InterruptedIOException) {
-                                WireBareLogger.error(e)
+                                WireBareLogger.error(TAG, "read vpn input stream failed", e)
                             }
                             return@launch
                         }
@@ -115,7 +117,7 @@ internal class PacketDispatcher private constructor(
 
                     val interceptor = interceptors[Protocol.parse(ipHeader.dataProtocol)]
                     if (interceptor == null) {
-                        WireBareLogger.warn("未知的协议代号 0b${ipHeader.dataProtocol.toString(2)}")
+                        WireBareLogger.warn(TAG, "unknow protocol code 0b${ipHeader.dataProtocol.toString(2)}")
                         continue
                     }
 
@@ -123,11 +125,11 @@ internal class PacketDispatcher private constructor(
                         // 拦截器拦截输入流
                         interceptor.intercept(ipHeader, packet, outputStream)
                     } catch (e: Exception) {
-                        WireBareLogger.error(e)
+                        WireBareLogger.error(TAG, "interceptor internal error", e)
                     }
                 }
             } catch (e: Exception) {
-                WireBareLogger.error(e)
+                WireBareLogger.error(TAG, "dispatcher internal error", e)
             }
             // 关闭所有资源
             closeSafely(proxyDescriptor, inputStream, outputStream)

@@ -58,6 +58,10 @@ internal class UdpRealTunnel(
     private val vpnService: VpnService
 ) : DatagramSocketNioTunnel() {
 
+    companion object {
+        private const val TAG = "UdpRealTunnel"
+    }
+
     private val header: UdpHeader = udpHeader.copy().also {
         val localAddress = it.ipHeader.sourceAddress
         val localPort = it.sourcePort
@@ -72,22 +76,27 @@ internal class UdpRealTunnel(
     internal fun connectRemoteServer(address: String, port: Int) {
         if (vpnService.protect(channel.socket())) {
             channel.configureBlocking(false)
+            WireBareLogger.warn(TAG, "start to connect remote server($address:$port)")
             try {
                 channel.connect(InetSocketAddress(address, port))
             } catch (e: Exception) {
                 reportExceptionWhenConnect(address, port, e)
-                WireBareLogger.error(e)
+                WireBareLogger.error(
+                    TAG,
+                    "connect to remote server($address:$port) failed",
+                    e
+                )
                 onException(e)
             }
             prepareRead()
         } else {
-            throw IllegalArgumentException("无法保护 UDP 通道的套接字")
+            throw IllegalArgumentException("cannot protect datagram socket for udp tunnel")
         }
     }
 
     override fun onWrite(): Int {
         val length = super.onWrite()
-        WireBareLogger.inetDebug(session, "代理客户端写入 $length 字节")
+        WireBareLogger.inetDebug(TAG, session, "proxy client write $length bytes")
         return length
     }
 
@@ -97,7 +106,7 @@ internal class UdpRealTunnel(
         if (length < 0) {
             closeSafely()
         } else {
-            WireBareLogger.inetDebug(session, "代理客户端读取 $length 字节")
+            WireBareLogger.inetDebug(TAG, session, "proxy client read $length bytes")
             outputStream.write(createUdpMessage(buffer))
         }
     }
@@ -130,7 +139,7 @@ internal class UdpRealTunnel(
             IPVersion.IPv4 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
-                        "[UDP] 连接远程服务器 $address:$port 时出现错误",
+                        "[UDP] try to connect to $address:$port failed",
                         EventSynopsis.IPV4_UNREACHABLE,
                         t
                     )
@@ -140,7 +149,7 @@ internal class UdpRealTunnel(
             IPVersion.IPv6 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
-                        "[UDP] 连接远程服务器 $address:$port 时出现错误",
+                        "[UDP] try to connect to $address:$port failed",
                         EventSynopsis.IPV6_UNREACHABLE,
                         t
                     )
@@ -157,7 +166,7 @@ internal class UdpRealTunnel(
 
     override fun close() {
         super.close()
-        WireBareLogger.inetDebug(session, "UDP 代理结束")
+        WireBareLogger.inetDebug(TAG, session, "close")
     }
 
 }

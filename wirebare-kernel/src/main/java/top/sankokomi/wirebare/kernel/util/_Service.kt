@@ -25,30 +25,24 @@
 package top.sankokomi.wirebare.kernel.util
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
-import android.os.Build
-import androidx.core.content.getSystemService
+import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 
 internal fun Service.defaultNotification(chanelId: String): Notification {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        getSystemService<NotificationManager>()?.let {
-            if (it.getNotificationChannel(chanelId) == null) {
-                it.createNotificationChannel(
-                    NotificationChannel(
-                        chanelId,
-                        chanelId,
-                        NotificationManager.IMPORTANCE_DEFAULT
-                    )
-                )
-            }
-        }
+    val manager = NotificationManagerCompat.from(this)
+    if (manager.getNotificationChannel(chanelId) == null) {
+        manager.createNotificationChannel(
+            NotificationChannelCompat.Builder(
+                chanelId,
+                NotificationManagerCompat.IMPORTANCE_DEFAULT
+            ).setName(chanelId).build()
+        )
     }
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        Notification.Builder(this, chanelId)
-    } else {
-        @Suppress("DEPRECATION")
-        Notification.Builder(this)
-    }.setContentTitle(chanelId).setContentText(chanelId).build()
+    return NotificationCompat
+        .Builder(this, chanelId)
+        .setContentTitle(chanelId)
+        .setContentText(chanelId)
+        .build()
 }

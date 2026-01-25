@@ -33,15 +33,13 @@ package top.sankokomi.wirebare.kernel.net
  * @param sessionStore 会话所对应的 [TcpSessionStore]
  * */
 data class TcpSession(
-    val sourcePort: Port,
-    val destinationAddress: IpAddress,
-    val destinationPort: Port,
+    override val sourcePort: Port,
+    override val destinationAddress: IpAddress,
+    override val destinationPort: Port,
     val sessionStore: TcpSessionStore
-) : Session<Port>(sessionStore) {
+) : Session {
 
     override val protocol: Protocol = Protocol.TCP
-
-    override val key: Port = sourcePort
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

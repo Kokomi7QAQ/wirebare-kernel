@@ -30,6 +30,7 @@ import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,8 @@ abstract class WireBareProxyService : VpnService(),
     CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.IO) {
 
     companion object {
+        private const val TAG = "WireBareProxyService"
+
         internal const val WIREBARE_ACTION_PROXY_VPN_START =
             "top.sankokomi.wirebare.core.action.Start"
 
@@ -81,12 +84,12 @@ abstract class WireBareProxyService : VpnService(),
     }
 
     final override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        WireBareLogger.info("Service startCommand")
+        WireBareLogger.info(TAG, "service startCommand")
         intent ?: return START_NOT_STICKY
         when (intent.action) {
             WIREBARE_ACTION_PROXY_VPN_START -> startWireBare()
             WIREBARE_ACTION_PROXY_VPN_STOP -> stopWireBare()
-            else -> throw IllegalArgumentException("意料之外的 Action")
+            else -> throw IllegalArgumentException("unexpected action")
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -95,7 +98,7 @@ abstract class WireBareProxyService : VpnService(),
     private var fd: CompletableDeferred<ParcelFileDescriptor?> = CompletableDeferred()
 
     private fun startWireBare() {
-        WireBareLogger.info("Service startWireBare")
+        WireBareLogger.info(TAG, "service startWireBare")
         WireBare.notifyVpnStatusChanged(ProxyStatus.ACTIVE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(notificationId, notification(), FOREGROUND_SERVICE_TYPE_DATA_SYNC)
@@ -113,22 +116,17 @@ abstract class WireBareProxyService : VpnService(),
     }
 
     private fun stopWireBare() {
-        WireBareLogger.info("Service stopWireBare")
+        WireBareLogger.info(TAG, "service stopWireBare")
         launch(Dispatchers.IO) {
             fd.await().closeSafely()
             this@WireBareProxyService.cancel()
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     override fun onDestroy() {
-        WireBareLogger.info("Service destroy")
+        WireBareLogger.info(TAG, "service destroy")
         super.onDestroy()
         WireBare.notifyVpnStatusChanged(ProxyStatus.DEAD)
         WireBare detach this

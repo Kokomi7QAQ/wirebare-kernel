@@ -24,18 +24,24 @@
 
 package top.sankokomi.wirebare.kernel.net
 
-abstract class Session<K> protected constructor(
-    private val sessionStore: SessionStore<K, *>
-) {
-
+interface Session {
     /**
      * 会话所属的协议
      * */
-    abstract val protocol: Protocol
+    val protocol: Protocol
 
     /**
-     * 唯一识别此会话的标志符
+     * 会话来源端口
      * */
-    abstract val key: K
+    val sourcePort: Port
 
+    /**
+     * 会话目的地址
+     * */
+    val destinationAddress: IpAddress
+
+    /**
+     * 会话目的端口
+     * */
+    val destinationPort: Port
 }

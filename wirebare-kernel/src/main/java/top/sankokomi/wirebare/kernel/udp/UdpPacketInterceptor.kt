@@ -44,6 +44,10 @@ internal class UdpPacketInterceptor(
     proxyService: WireBareProxyService
 ) : PacketInterceptor {
 
+    companion object {
+        private const val TAG = "UdpPacketInterceptor"
+    }
+
     private val sessionStore: UdpSessionStore = UdpSessionStore()
 
     private val proxyServer =
@@ -67,10 +71,7 @@ internal class UdpPacketInterceptor(
             destinationPort
         )
 
-        WireBareLogger.inetDebug(
-            session,
-            "[${ipHeader.ipVersion.name}-UDP] 客户端 $sourcePort >> 代理服务器"
-        )
+        WireBareLogger.inetDebug(TAG, session, "start")
 
         proxyServer.proxy(udpHeader, outputStream)
     }

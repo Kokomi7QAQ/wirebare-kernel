@@ -37,7 +37,6 @@ import top.sankokomi.wirebare.kernel.service.WireBareProxyService
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.closeSafely
 import top.sankokomi.wirebare.kernel.util.ipVersion
-import java.lang.Exception
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
@@ -60,6 +59,10 @@ internal class TcpRealTunnel(
     private val proxyService: WireBareProxyService
 ) : SocketNioTunnel(), TcpTunnel {
 
+    companion object {
+        private const val TAG = "TcpRealTunnel"
+    }
+
     private lateinit var proxyTunnel: TcpProxyTunnel
 
     internal fun attachProxyTunnel(proxy: TcpProxyTunnel) {
@@ -73,32 +76,40 @@ internal class TcpRealTunnel(
         if (proxyService.protect(channel.socket())) {
             channel.configureBlocking(false)
             channel.register(selector, SelectionKey.OP_CONNECT, this)
-            WireBareLogger.warn("开始连接远程服务器 $remoteAddress:$remotePort")
+            WireBareLogger.warn(TAG, "start to connect remote server($remoteAddress:$remotePort)")
             try {
                 channel.connect(InetSocketAddress(remoteAddress, remotePort))
             } catch (e: Exception) {
                 reportExceptionWhenConnect(remoteAddress, remotePort, e)
-                WireBareLogger.error(e)
+                WireBareLogger.error(
+                    TAG,
+                    "connect to remote server($remoteAddress:$remotePort) failed",
+                    e
+                )
                 onException(e)
             }
         } else {
-            throw IllegalStateException("无法保护 TCP 通道的套接字")
+            throw IllegalStateException("cannot protect socket for tcp tunnel")
         }
     }
 
     override fun onConnected() {
-        WireBareLogger.warn("远程服务器连接完成 $remoteAddress:$remotePort")
+        WireBareLogger.warn(TAG, "connect remote server succeed $remoteAddress:$remotePort")
         if (channel.finishConnect()) {
             proxyTunnel.onConnected()
             prepareRead()
         } else {
-            throw IllegalStateException("套接字连接失败")
+            throw IllegalStateException("connect remote server failed")
         }
     }
 
     override fun onWrite(): Int {
         val length = super.onWrite()
-        WireBareLogger.inetDebug(session, "代理客户端 >> 远程服务器 $length 字节")
+        WireBareLogger.inetVerbose(
+            TAG,
+            session,
+            "proxy server > remote server $length bytes"
+        )
         return length
     }
 
@@ -115,8 +126,9 @@ internal class TcpRealTunnel(
             return
         }
         WireBareLogger.inetVerbose(
+            TAG,
             session,
-            "代理客户端 << 远程服务器 $length 字节"
+            "proxy server < remote server $length Bytes"
         )
         tcpVirtualGateway.onResponse(buffer, session, this)
     }
@@ -126,7 +138,7 @@ internal class TcpRealTunnel(
             IPVersion.IPv4 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
-                        "[TCP] 连接远程服务器 $address:$port 时出现错误",
+                        "[TCP] try to connect to $address:$port failed",
                         EventSynopsis.IPV4_UNREACHABLE,
                         t
                     )
@@ -136,7 +148,7 @@ internal class TcpRealTunnel(
             IPVersion.IPv6 -> {
                 WireBare.postImportantEvent(
                     ImportantEvent(
-                        "[TCP] 连接远程服务器 $address:$port 时出现错误",
+                        "[TCP] try to connect to $address:$port failed",
                         EventSynopsis.IPV6_UNREACHABLE,
                         t
                     )

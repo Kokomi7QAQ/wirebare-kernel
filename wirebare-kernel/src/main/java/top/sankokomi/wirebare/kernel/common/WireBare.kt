@@ -38,12 +38,13 @@ import top.sankokomi.wirebare.kernel.common.WireBare.removeVpnProxyStatusListene
 import top.sankokomi.wirebare.kernel.common.WireBare.startProxy
 import top.sankokomi.wirebare.kernel.common.WireBare.stopProxy
 import top.sankokomi.wirebare.kernel.service.WireBareProxyService
-import top.sankokomi.wirebare.kernel.util.LogLevel
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import java.net.DatagramSocket
 import java.net.Socket
 
 object WireBare {
+
+    private const val TAG = "WireBare"
 
     private lateinit var appContext: Context
 
@@ -148,14 +149,18 @@ object WireBare {
     /**
      * 配置日志等级
      *
-     * @see [LogLevel]
+     * @see [WireBareLogger]
+     * @see [WireBareLogger.Level]
      * */
-    @LogLevel
-    var logLevel: Int
-        get() = WireBareLogger.LOG_LEVEL
+    var logLevel: WireBareLogger.Level
+        get() = WireBareLogger.level
         set(level) {
-            WireBareLogger.LOG_LEVEL = level
+            WireBareLogger.level = level
         }
+
+    fun setLogProxy(proxy: WireBareLogger.Proxy) {
+        WireBareLogger.proxy = proxy
+    }
 
     /**
      * This function can only be called when proxy service is running.
@@ -200,7 +205,7 @@ object WireBare {
 
     internal fun notifyVpnStatusChanged(newStatus: ProxyStatus) {
         Handler(Looper.getMainLooper()).post {
-            WireBareLogger.info("statusChange: old = $proxyStatus, new = $newStatus")
+            WireBareLogger.info(TAG, "statusChange $proxyStatus > $newStatus")
             if (newStatus == proxyStatus) return@post
             val oldStatus = proxyStatus
             proxyStatus = newStatus
@@ -220,7 +225,7 @@ object WireBare {
         get() {
             val config = _configuration
             if (config != null) return config
-            throw NullPointerException("WireBare 配置为空")
+            throw NullPointerException("wireBare configuration is null")
         }
 
 }

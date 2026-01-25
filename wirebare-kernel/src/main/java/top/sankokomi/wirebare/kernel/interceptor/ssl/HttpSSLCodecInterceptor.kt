@@ -41,6 +41,10 @@ import java.util.concurrent.LinkedBlockingQueue
 
 class HttpSSLCodecInterceptor(jks: JKS) : HttpInterceptor {
 
+    companion object {
+        private const val TAG = "HttpSSLCodecInterceptor"
+    }
+
     private val factory = SSLEngineFactory(jks)
 
     internal val requestCodec = RequestSSLCodec(factory)
@@ -86,7 +90,7 @@ class HttpSSLCodecInterceptor(jks: JKS) : HttpInterceptor {
                 }
 
                 override fun sslFailed(target: ByteBuffer) {
-                    WireBareLogger.warn("SSL 引擎创建失败")
+                    WireBareLogger.warn(TAG, "request SSL engine create failed")
                 }
 
                 override fun decryptSuccess(target: ByteBuffer) {
@@ -130,7 +134,7 @@ class HttpSSLCodecInterceptor(jks: JKS) : HttpInterceptor {
                 }
 
                 override fun sslFailed(target: ByteBuffer) {
-                    WireBareLogger.warn("SSL 引擎创建失败")
+                    WireBareLogger.warn(TAG, "response SSL engine create failed")
                     // chain.processRequestNext(buffer, session, tunnel)
                 }
 
@@ -172,7 +176,7 @@ class HttpSSLCodecInterceptor(jks: JKS) : HttpInterceptor {
     private fun pendingReqCiphertext(
         tcpSession: TcpSession
     ): LinkedBlockingQueue<ByteBuffer> {
-        return pendingReqCiphertextMap.computeIfAbsent(tcpSession) {
+        return pendingReqCiphertextMap.getOrPut(tcpSession) {
             LinkedBlockingQueue()
         }
     }
@@ -180,7 +184,7 @@ class HttpSSLCodecInterceptor(jks: JKS) : HttpInterceptor {
     private fun pendingRspCiphertext(
         tcpSession: TcpSession
     ): LinkedBlockingQueue<ByteBuffer> {
-        return pendingRspCiphertextMap.computeIfAbsent(tcpSession) {
+        return pendingRspCiphertextMap.getOrPut(tcpSession) {
             LinkedBlockingQueue()
         }
     }

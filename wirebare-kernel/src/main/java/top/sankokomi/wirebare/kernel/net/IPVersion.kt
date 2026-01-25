@@ -24,7 +24,7 @@
 
 package top.sankokomi.wirebare.kernel.net
 
-enum class IPVersion {
-    IPv4,
-    IPv6
+enum class IPVersion(val versionName: String) {
+    IPv4("IPv4"),
+    IPv6("IPv6")
 }

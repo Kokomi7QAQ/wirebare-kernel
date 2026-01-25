@@ -75,7 +75,7 @@ internal class ProxyLauncher private constructor(
                     builder.addAllowedApplication(proxyService.packageName)
                 }
                 if (disallowedApplications.contains(proxyService.packageName)) {
-                    throw IllegalArgumentException("母应用必须接入到代理服务中")
+                    throw IllegalArgumentException("parent application must be included")
                 }
                 for (application in disallowedApplications) {
                     builder.addDisallowedApplication(application)

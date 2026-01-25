@@ -37,6 +37,10 @@ import java.nio.channels.Selector
  * */
 internal abstract class NioProxyServer : ProxyServer() {
 
+    companion object {
+        private const val TAG = "NioProxyServer"
+    }
+
     /**
      * NIO 的选择器，已经在 [process] 中对其完成了 [Selector.select] 操作并进行对应回调
      * */
@@ -65,7 +69,7 @@ internal abstract class NioProxyServer : ProxyServer() {
                 else if (key.isReadable) callback.onRead()
                 else if (key.isWritable) callback.onWrite()
             } catch (e: Exception) {
-                WireBareLogger.error("在 NIO KEY 处理时发生错误", e)
+                WireBareLogger.error(TAG, "process nio key failed", e)
                 callback.onException(e)
             }
         }

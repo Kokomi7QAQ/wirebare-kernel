@@ -51,6 +51,10 @@ internal class UdpProxyServer(
     private val proxyService: WireBareProxyService
 ) : NioProxyServer(), CoroutineScope by proxyService {
 
+    companion object {
+        private const val TAG = "UdpProxyServer"
+    }
+
     override val selector: Selector = Selector.open()
 
     private val tunnels = hashMapOf<Port, UdpRealTunnel>()
@@ -70,7 +74,7 @@ internal class UdpProxyServer(
                 tunnel.write(udpHeader.data)
             } catch (e: Exception) {
                 tunnels.remove(sourcePort)?.closeSafely()
-                WireBareLogger.error(e)
+                WireBareLogger.error(TAG, "proxy internal error", e)
             }
         }
     }
@@ -82,10 +86,11 @@ internal class UdpProxyServer(
         udpHeader: UdpHeader,
         outputStream: OutputStream
     ): UdpRealTunnel {
-        WireBareLogger.debug("[UDP] 通道创建 客户端 ${udpHeader.sourcePort} >> 代理服务器")
         val session = sessionStore.query(
             udpHeader.sourcePort
-        ) ?: throw IllegalStateException("一个 UDP 请求因为找不到指定会话而代理失败")
+        ) ?: throw IllegalStateException("cannot find UDP session(port = ${udpHeader.sourcePort})")
+
+        WireBareLogger.inetInfo(TAG, session, "create tunnel")
 
         return UdpRealTunnel(
             DatagramChannel.open(),
