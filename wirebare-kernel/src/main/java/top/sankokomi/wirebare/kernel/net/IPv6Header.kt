@@ -30,7 +30,6 @@ import top.sankokomi.wirebare.kernel.util.readLong
 import top.sankokomi.wirebare.kernel.util.readShort
 import top.sankokomi.wirebare.kernel.util.writeLong
 import top.sankokomi.wirebare.kernel.util.writeShort
-import java.math.BigInteger
 
 /**
  * ipv6 包头结构如下
@@ -148,7 +147,7 @@ class IPv6Header(
             packet.writeLong(value.intIPv6.low64, offset + OFFSET_DESTINATION_ADDRESS_LOW_64)
         }
 
-    override val addressSum: BigInteger
+    override val addressSum: Int
         get() = packet.calculateSum(offset + OFFSET_SOURCE_ADDRESS_HIGH_64, 32)
 
     override fun notifyCheckSum() {

@@ -103,7 +103,7 @@ class IPv4Header(
     /**
      * 计算来源 ip 地址和目的 ip 地址的异或和并返回
      * */
-    override val addressSum: BigInteger
+    override val addressSum: Int
         get() = packet.calculateSum(offset + OFFSET_SOURCE_ADDRESS, 8)
 
     /**
@@ -133,10 +133,8 @@ class IPv4Header(
 
     private fun calculateChecksum(): Short {
         var sum = packet.calculateSum(offset, headerLength)
-        var next = sum shr 16
-        while (next != BigInteger.ZERO) {
-            sum = (sum and BigInteger.valueOf(0xFFFF)) + next
-            next = sum shr 16
+        while ((sum shr 16) != 0) {
+            sum = (sum and 0xFFFF) + (sum ushr 16)
         }
         return sum.inv().toShort()
     }

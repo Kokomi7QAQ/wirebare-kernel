@@ -24,8 +24,6 @@
 
 package top.sankokomi.wirebare.kernel.util
 
-import java.math.BigInteger
-
 internal fun ByteArray.readByte(offset: Int): Byte {
     return this[offset]
 }
@@ -80,17 +78,18 @@ internal fun ByteArray.writeLong(value: Long, offset: Int) {
     this[offset + 7] = value.toByte()
 }
 
-internal fun ByteArray.calculateSum(offset: Int, length: Int): BigInteger {
+internal fun ByteArray.calculateSum(offset: Int, length: Int): Int {
     var start = offset
     var size = length
-    var sum = BigInteger.ZERO
+    var sum = 0
     while (size > 1) {
-        sum += BigInteger.valueOf((readShort(start).toInt() and 0xFFFF).toLong())
+        val value = readShort(start).toInt() and 0xFFFF
+        sum += value
         start += 2
         size -= 2
     }
     if (size > 0) {
-        sum += BigInteger.valueOf((readByte(start).toInt() and 0xFF shl 8).toLong())
+        sum += readByte(start).toInt() and 0xFF shl 8
     }
     return sum
 }

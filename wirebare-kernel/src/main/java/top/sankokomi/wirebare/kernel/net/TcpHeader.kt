@@ -30,7 +30,6 @@ import top.sankokomi.wirebare.kernel.util.readInt
 import top.sankokomi.wirebare.kernel.util.readShort
 import top.sankokomi.wirebare.kernel.util.writeByte
 import top.sankokomi.wirebare.kernel.util.writeShort
-import java.math.BigInteger
 import kotlin.experimental.and
 
 /**
@@ -144,14 +143,12 @@ internal class TcpHeader(
 
     private fun calculateChecksum(): Short {
         val totalLength = ipHeader.dataLength
-        var sum = ipHeader.addressSum
-        sum += BigInteger.valueOf((ipHeader.dataProtocol.toInt() and 0xF).toLong())
-        sum += BigInteger.valueOf(totalLength.toLong())
+        var sum: Int = ipHeader.addressSum
+        sum += ipHeader.dataProtocol.toInt() and 0xF
+        sum += totalLength
         sum += packet.calculateSum(offset, totalLength)
-        var next = sum shr 16
-        while (next != BigInteger.ZERO) {
-            sum = (sum and BigInteger.valueOf(0xFFFF)) + next
-            next = sum shr 16
+        while ((sum shr 16) != 0) {
+            sum = (sum and 0xFFFF) + (sum shr 16)
         }
         return sum.inv().toShort()
     }

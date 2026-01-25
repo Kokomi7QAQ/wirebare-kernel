@@ -26,7 +26,6 @@ package top.sankokomi.wirebare.kernel.net
 
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.readByte
-import java.math.BigInteger
 
 interface IPHeader {
 
@@ -39,7 +38,10 @@ interface IPHeader {
             when (val ipVersion = packet.readByte(offset).toInt() ushr 4) {
                 VERSION_4 -> {
                     if (length < IPv4Header.MIN_IPV4_LENGTH) {
-                        WireBareLogger.warn(TAG, "IPv4 packet length($length) less than min(${IPv4Header.MIN_IPV4_LENGTH})")
+                        WireBareLogger.warn(
+                            TAG,
+                            "IPv4 packet length($length) less than min(${IPv4Header.MIN_IPV4_LENGTH})"
+                        )
                         return null
                     }
                     return IPv4Header(packet, 0)
@@ -47,7 +49,10 @@ interface IPHeader {
 
                 VERSION_6 -> {
                     if (length < IPv6Header.IPV6_STANDARD_LENGTH) {
-                        WireBareLogger.warn(TAG, "IPv6 packet length($length) less than min(${IPv6Header.IPV6_STANDARD_LENGTH})")
+                        WireBareLogger.warn(
+                            TAG,
+                            "IPv6 packet length($length) less than min(${IPv6Header.IPV6_STANDARD_LENGTH})"
+                        )
                         return null
                     }
                     return IPv6Header(packet, 0)
@@ -90,7 +95,7 @@ interface IPHeader {
     /**
      * 地址部分的校验和
      * */
-    val addressSum: BigInteger
+    val addressSum: Int
 
     fun notifyCheckSum()
 }

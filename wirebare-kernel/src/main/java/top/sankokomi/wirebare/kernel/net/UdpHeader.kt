@@ -27,7 +27,6 @@ package top.sankokomi.wirebare.kernel.net
 import top.sankokomi.wirebare.kernel.util.calculateSum
 import top.sankokomi.wirebare.kernel.util.readShort
 import top.sankokomi.wirebare.kernel.util.writeShort
-import java.math.BigInteger
 import java.nio.ByteBuffer
 
 /**
@@ -102,14 +101,12 @@ internal class UdpHeader(
 
     private fun calculateChecksum(): Short {
         val dataLength = ipHeader.dataLength
-        var sum = ipHeader.addressSum
-        sum += BigInteger.valueOf((ipHeader.dataProtocol.toInt() and 0xF).toLong())
-        sum += BigInteger.valueOf(dataLength.toLong())
+        var sum: Int = ipHeader.addressSum
+        sum += ipHeader.dataProtocol.toInt() and 0xF
+        sum += dataLength
         sum += packet.calculateSum(offset, dataLength)
-        var next = sum shr 16
-        while (next != BigInteger.ZERO) {
-            sum = (sum and BigInteger.valueOf(0xFFFF)) + next
-            next = sum shr 16
+        while ((sum ushr 16) != 0) {
+            sum = (sum and 0xFFFF) + (sum ushr 16)
         }
         return sum.inv().toShort()
     }
