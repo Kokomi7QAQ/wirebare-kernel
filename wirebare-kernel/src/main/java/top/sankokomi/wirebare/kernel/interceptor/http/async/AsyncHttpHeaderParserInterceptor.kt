@@ -24,9 +24,8 @@
 
 package top.sankokomi.wirebare.kernel.interceptor.http.async
 
+import top.sankokomi.wirebare.kernel.interceptor.http.HttpHeaderParser
 import top.sankokomi.wirebare.kernel.interceptor.http.HttpSession
-import top.sankokomi.wirebare.kernel.interceptor.http.parseHttpRequestHeader
-import top.sankokomi.wirebare.kernel.interceptor.http.parseHttpResponseHeader
 import java.nio.ByteBuffer
 
 /**
@@ -45,7 +44,7 @@ class AsyncHttpHeaderParserInterceptor : AsyncHttpIndexedInterceptor() {
             session.request.isPlaintext == true &&
             session.request.originHead == null
         ) {
-            parseHttpRequestHeader(buffer, session)
+            HttpHeaderParser.parseHttpRequestHeader(buffer, session)
         }
         super.onRequest(chain, buffer, session, index)
     }
@@ -61,7 +60,7 @@ class AsyncHttpHeaderParserInterceptor : AsyncHttpIndexedInterceptor() {
             session.response.isPlaintext == true &&
             session.response.originHead == null
         ) {
-            parseHttpResponseHeader(buffer, session)
+            HttpHeaderParser.parseHttpResponseHeader(buffer, session)
         }
         super.onResponse(chain, buffer, session, index)
     }

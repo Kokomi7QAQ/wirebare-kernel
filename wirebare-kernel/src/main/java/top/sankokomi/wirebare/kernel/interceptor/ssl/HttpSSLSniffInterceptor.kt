@@ -28,7 +28,7 @@ import top.sankokomi.wirebare.kernel.interceptor.http.HttpIndexedInterceptor
 import top.sankokomi.wirebare.kernel.interceptor.http.HttpInterceptChain
 import top.sankokomi.wirebare.kernel.interceptor.http.HttpSession
 import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpTunnel
-import top.sankokomi.wirebare.kernel.ssl.judgeIsHttps
+import top.sankokomi.wirebare.kernel.ssl.isHttpsPacket
 import top.sankokomi.wirebare.kernel.util.newString
 import top.sankokomi.wirebare.kernel.util.readShort
 import java.nio.ByteBuffer
@@ -44,7 +44,7 @@ class HttpSSLSniffInterceptor : HttpIndexedInterceptor() {
     ) {
         if (index == 0) {
             val (request, _) = session
-            request.isHttps = buffer.judgeIsHttps
+            request.isHttps = buffer.isHttpsPacket()
             session.request.isPlaintext = request.isHttps == false
             request.hostInternal = ensureHost(request.isHttps, buffer)
         }

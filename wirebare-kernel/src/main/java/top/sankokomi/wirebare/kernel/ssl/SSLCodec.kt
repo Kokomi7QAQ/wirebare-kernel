@@ -115,15 +115,7 @@ abstract class SSLCodec {
             return VerifyResult.NotEnough
         }
         var packetLength = 0
-        var tls = when (buffer.readUnsignedByte(position)) {
-            SSLPredicate.SSL_CONTENT_TYPE_CHANGE_CIPHER_SPEC,
-            SSLPredicate.SSL_CONTENT_TYPE_ALERT,
-            SSLPredicate.SSL_CONTENT_TYPE_HANDSHAKE,
-            SSLPredicate.SSL_CONTENT_TYPE_APPLICATION_DATA,
-            SSLPredicate.SSL_CONTENT_TYPE_EXTENSION_HEARTBEAT -> true
-
-            else -> false
-        }
+        var tls = buffer.readUnsignedByte(position) in SSLPredicate.httpsConnectHeadSet
         if (tls) {
             val majorVersion = buffer.readUnsignedByte(position + 1)
             if (majorVersion == 3) {

@@ -40,7 +40,7 @@ class HttpHeaderParserInterceptor : HttpIndexedInterceptor() {
         index: Int
     ) {
         if (index == 0 && session.request.isPlaintext == true) {
-            parseHttpRequestHeader(buffer, session)
+            HttpHeaderParser.parseHttpRequestHeader(buffer, session)
         }
         super.onRequest(chain, buffer, session, tunnel, index)
     }
@@ -53,7 +53,7 @@ class HttpHeaderParserInterceptor : HttpIndexedInterceptor() {
         index: Int
     ) {
         if (index == 0 && session.response.isPlaintext == true) {
-            parseHttpResponseHeader(buffer, session)
+            HttpHeaderParser.parseHttpResponseHeader(buffer, session)
         }
         super.onResponse(chain, buffer, session, tunnel, index)
     }

@@ -24,85 +24,104 @@
 
 package top.sankokomi.wirebare.kernel.interceptor.http
 
+import top.sankokomi.wirebare.kernel.ssl.SSLPredicate
 import top.sankokomi.wirebare.kernel.util.WireBareLogger
 import top.sankokomi.wirebare.kernel.util.newString
 import java.nio.ByteBuffer
 
-private const val TAG = "HttpHeaderParser"
+object HttpHeaderParser {
+    private const val TAG = "HttpHeaderParser"
 
-internal fun parseHttpRequestHeader(
-    buffer: ByteBuffer,
-    session: HttpSession
-) {
-    try {
-        val (request, _) = session
-        val requestString = buffer.newString()
-        val headerString = requestString.substringBefore("\r\n\r\n")
-        val headers = headerString.split("\r\n")
-        val requestLine = headers[0].split(" ".toRegex())
-        request.originHead = requestString
-        request.formatHead = headers.filter { it.isNotBlank() }
-        request.method = requestLine[0]
-        request.httpVersion = requestLine[requestLine.size - 1]
-        request.path = headers[0].replace(requestLine[0], "")
-            .replace(requestLine[requestLine.size - 1], "")
-            .trim()
-        parseHeaderLine(headers, listOf("Host: ")) { name, content ->
-            when (name) {
-                "Host: " -> request.host = content
+    fun parseHttpRequestHeader(
+        buffer: ByteBuffer,
+        session: HttpSession
+    ) {
+        try {
+            val (request, _) = session
+            val requestString = buffer.newString()
+            val headerString = requestString.substringBefore("\r\n\r\n")
+            val headers = headerString.split("\r\n")
+            val requestLine = headers[0].split(" ".toRegex())
+            request.originHead = requestString
+            request.formatHead = headers.filter { it.isNotBlank() }
+            request.method = requestLine[0]
+            request.httpVersion = requestLine[requestLine.size - 1]
+            request.path = headers[0].replace(requestLine[0], "")
+                .replace(requestLine[requestLine.size - 1], "")
+                .trim()
+            parseHeaderLine(headers, listOf("Host: ")) { name, content ->
+                when (name) {
+                    "Host: " -> request.host = content
+                }
             }
+        } catch (e: Exception) {
+            WireBareLogger.error(TAG, "parse HTTP request header failed", e)
         }
-    } catch (e: Exception) {
-        WireBareLogger.error(TAG, "parse HTTP request header failed", e)
     }
-}
 
-internal fun parseHttpResponseHeader(
-    buffer: ByteBuffer,
-    session: HttpSession
-) {
-    try {
-        val (request, response) = session
-        response.url = request.url
-        val responseString = buffer.newString()
-        val headerString = responseString.substringBefore("\r\n\r\n")
-        val headers = headerString.split("\r\n")
-        val responseLine = headers[0].split(" ".toRegex())
-        response.originHead = headerString
-        response.formatHead = headers.filter { it.isNotBlank() }
-        response.httpVersion = responseLine[0]
-        response.rspStatus = responseLine[1]
-        parseHeaderLine(
-            headers,
-            listOf(
-                "Content-Type: ",
-                "Content-Encoding: "
-            )
-        ) { name, content ->
-            when (name) {
-                "Content-Type: " -> response.contentType = content
-                "Content-Encoding: " -> response.contentEncoding = content
+    fun parseHttpResponseHeader(
+        buffer: ByteBuffer,
+        session: HttpSession
+    ) {
+        try {
+            val (request, response) = session
+            response.url = request.url
+            val responseString = buffer.newString()
+            val headerString = responseString.substringBefore("\r\n\r\n")
+            val headers = headerString.split("\r\n")
+            val responseLine = headers[0].split(" ".toRegex())
+            response.originHead = headerString
+            response.formatHead = headers.filter { it.isNotBlank() }
+            response.httpVersion = responseLine[0]
+            response.rspStatus = responseLine[1]
+            parseHeaderLine(
+                headers,
+                listOf(
+                    "Content-Type: ",
+                    "Content-Encoding: "
+                )
+            ) { name, content ->
+                when (name) {
+                    "Content-Type: " -> response.contentType = content
+                    "Content-Encoding: " -> response.contentEncoding = content
+                }
             }
+        } catch (e: Exception) {
+            WireBareLogger.error(TAG, "parse HTTP response header failed", e)
         }
-    } catch (e: Exception) {
-        WireBareLogger.error(TAG, "parse HTTP response header failed", e)
     }
-}
 
-private fun parseHeaderLine(
-    headers: List<String>,
-    names: List<String>,
-    onFound: (name: String, content: String) -> Unit
-) {
-    val nameList = names.toMutableList()
-    headers.forEach { msg ->
-        nameList.removeAll { name ->
-            val index = msg.indexOf(name)
-            if (index != -1) {
-                onFound(name, msg.substring(index + name.length))
-                return@removeAll true
+    private fun parseHeaderLine(
+        headers: List<String>,
+        names: List<String>,
+        onFound: (name: String, content: String) -> Unit
+    ) {
+        val nameList = names.toMutableList()
+        headers.forEach { msg ->
+            nameList.removeAll { name ->
+                val index = msg.indexOf(name)
+                if (index != -1) {
+                    onFound(name, msg.substring(index + name.length))
+                    return@removeAll true
+                }
+                return@removeAll false
             }
-            return@removeAll false
         }
+    }
+
+    /**
+     * simple judge [method] is http method
+     * */
+    fun isHttpMethod(method: String?): Boolean {
+        method ?: return false
+        return method in SSLPredicate.httpMethodSet
+    }
+
+    /**
+     * simple judge [version] is http version
+     * */
+    fun isHttpVersion(version: String?): Boolean {
+        version ?: return false
+        return version.startsWith("HTTP/")
     }
 }
