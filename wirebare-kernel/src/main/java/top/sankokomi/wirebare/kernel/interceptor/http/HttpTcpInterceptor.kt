@@ -31,6 +31,7 @@ import top.sankokomi.wirebare.kernel.interceptor.tcp.TcpTunnel
 import top.sankokomi.wirebare.kernel.net.TcpSession
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Clock
 
 class HttpTcpInterceptor(
     configuration: WireBareConfiguration
@@ -78,7 +79,7 @@ class HttpTcpInterceptor(
 
     private fun takeHttpSession(tcpSession: TcpSession): HttpSession {
         return sessionMap.getOrPut(tcpSession) {
-            val requestTime = System.currentTimeMillis()
+            val requestTime = Clock.System.now().toEpochMilliseconds()
             val request = HttpRequest().also {
                 it.requestTime = requestTime
                 it.sourcePort = tcpSession.sourcePort.port

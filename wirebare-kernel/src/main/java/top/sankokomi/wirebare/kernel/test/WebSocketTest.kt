@@ -43,6 +43,7 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.TimeUnit
 import javax.net.SocketFactory
+import kotlin.time.Clock
 
 @Test
 fun testWebSocket(duration: Long = 60000L, protected: Boolean) {
@@ -97,7 +98,7 @@ class WebSocketCommunicationManager(protected: Boolean) {
         timerJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 delay(5000)
-                val msg = "hello ${System.currentTimeMillis()}"
+                val msg = "hello ${Clock.System.now().toEpochMilliseconds()}"
                 clientWebSocket?.send(msg)
                 log("client send: $msg")
             }

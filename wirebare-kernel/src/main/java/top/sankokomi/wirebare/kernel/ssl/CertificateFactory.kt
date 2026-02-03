@@ -57,6 +57,7 @@ import java.security.cert.Certificate
 import java.security.cert.X509Certificate
 import java.util.Date
 import java.util.Random
+import kotlin.time.Clock
 
 object CertificateFactory {
 
@@ -85,8 +86,8 @@ object CertificateFactory {
         val builder: X509v3CertificateBuilder = JcaX509v3CertificateBuilder(
             issuer,
             serial,
-            Date(System.currentTimeMillis() - 86400000L),
-            Date(System.currentTimeMillis() + 86400000L),
+            Date(Clock.System.now().toEpochMilliseconds() - 86400000L),
+            Date(Clock.System.now().toEpochMilliseconds() + 86400000L),
             subject,
             keyPair.public
         )
@@ -160,7 +161,7 @@ object CertificateFactory {
 
     private fun randomSerial(): Long {
         val rnd = Random()
-        rnd.setSeed(System.currentTimeMillis())
+        rnd.setSeed(Clock.System.now().toEpochMilliseconds())
         var sl = rnd.nextInt().toLong() shl 32 or (rnd.nextInt().toLong() and 0xFFFFFFFFL)
         sl = sl and 0x0000FFFFFFFFFFFFL
         return sl
